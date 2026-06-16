@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapping Across the Curriculum</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#f7f5f0;--surface:#fff;--surface2:#f0ede6;--surface3:#e8e4db;
+  --border:#ddd9ce;--border2:#c8c3b5;--text:#1a1814;--muted:#7a7568;--dim:#b5b0a5;
+  --green:#1a7a4a;--gl:#e6f5ed;--gm:#2da868;--gs:#16c466;
+  --amber:#b07a00;--al:#fef5dc;--as:#f5c542;
+  --red:#c0392b;--rl:#fdecea;
+  --blue:#1a4f8a;--bl:#e6eef8;--bs:#3b82f6;
+  --purple:#5b3d9e;--pl:#ede8f8;
+  --teal:#0f6e6e;--tl:#e0f4f4;
+  --sans:'DM Sans',sans-serif;--serif:'Fraunces',Georgia,serif;--mono:'DM Mono',monospace;
+  --r:8px;--rl2:14px;--sh:0 1px 3px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.04);
+  --shm:0 4px 12px rgba(0,0,0,.10),0 0 0 1px rgba(0,0,0,.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;min-height:100vh}
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex;flex-direction:column}
+
+/* SETUP */
+#setup{align-items:center;justify-content:center;padding:40px 20px}
+.setup-wrap{max-width:660px;width:100%}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.setup-title{font-family:var(--serif);font-size:40px;font-weight:700;line-height:1.1;margin-bottom:10px}
+.setup-title em{font-style:italic;color:var(--green)}
+.setup-lead{font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:28px;max-width:500px}
+.card{background:var(--surface);border-radius:var(--rl2);box-shadow:var(--shm);padding:28px;margin-bottom:14px}
+.fl{font-family:var(--mono);font-size:11px;letter-spacing:.07em;color:var(--muted);margin-bottom:6px;display:block;text-transform:uppercase}
+.fg{margin-bottom:18px}
+input[type=text],textarea{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;padding:10px 12px;outline:none;transition:border-color .15s}
+input[type=text]:focus,textarea:focus{border-color:var(--gm)}
+.ar{display:flex;gap:8px}.ar input{flex:1}
+.ctags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:30px}
+.ctag{display:inline-flex;align-items:center;gap:6px;background:var(--gl);border:1px solid #b0dfc5;border-radius:20px;padding:4px 10px;font-size:12px;color:var(--green);font-weight:500}
+.ctag button{background:none;border:none;color:var(--green);cursor:pointer;font-size:15px;line-height:1;opacity:.6}.ctag button:hover{opacity:1}
+.btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--sans);font-size:14px;font-weight:500;padding:10px 18px;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--text);color:#fff}.btn-primary:hover{background:#2a2820}.btn-primary:disabled{opacity:.35;cursor:not-allowed}
+.btn-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text)}.btn-outline:hover{border-color:var(--text)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#155f3a}
+.btn-sm{padding:6px 12px;font-size:12px}
+.depth-note{background:var(--surface2);border-radius:var(--r);padding:14px 16px;font-size:12px;color:var(--muted);margin-top:10px;line-height:1.7}
+.depth-note strong{color:var(--text);font-weight:600}
+.launch-row{display:flex;justify-content:flex-end;margin-top:20px}
+/* Course picker on setup screen */
+.course-picker{display:flex;flex-direction:column;gap:3px;max-height:320px;overflow-y:auto;border:1.5px solid var(--border);border-radius:var(--r);padding:6px}
+.picker-sem-label{font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;padding:6px 8px 2px;color:var(--muted)}
+.picker-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;transition:background .1s;user-select:none}
+.picker-item:hover{background:var(--surface2)}
+.picker-item.selected{background:var(--gl)}
+.picker-cb{width:16px;height:16px;border:1.5px solid var(--border2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;flex-shrink:0;transition:all .15s}
+.picker-item.selected .picker-cb{background:var(--green);border-color:var(--green);color:#fff}
+.picker-name{font-size:12px;flex:1}
+/* Instructor's own courses highlighted in mapping */
+.cgi.mine{outline:2px solid var(--gm);outline-offset:1px}
+.cgi.mine .cgn::after{content:' ★';color:var(--green);font-size:9px}
+/* Submit button pulse when ready */
+@keyframes subtlePulse{0%,100%{box-shadow:0 0 0 0 rgba(26,122,74,0)}50%{box-shadow:0 0 0 4px rgba(26,122,74,.15)}}
+.cp-chip{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:500;border:1px solid transparent}
+.cp-chip .cp-sem{font-family:var(--mono);font-size:9px;opacity:.7;letter-spacing:.03em}
+.sem-y1f  {background:#e8f4fd;border-color:#a8cfe8;color:#1a4f8a}
+.sem-y1sp {background:#e6f5ed;border-color:#a8d9bc;color:#1a6b3a}
+.sem-y1su {background:#fef5dc;border-color:#e8d08a;color:#8a6000}
+.sem-y2f  {background:#f5edfd;border-color:#c8a8e8;color:#5b1a8a}
+.sem-y2sp {background:#fde8e8;border-color:#e8a8a8;color:#8a1a1a}
+/* Semester legend in header */
+.sem-legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sl-dot{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;border:1px solid transparent}
+.sl-dot.sem-y1f  {background:#e8f4fd;border-color:#a8cfe8;color:#1a4f8a}
+.sl-dot.sem-y1sp {background:#e6f5ed;border-color:#a8d9bc;color:#1a6b3a}
+.sl-dot.sem-y1su {background:#fef5dc;border-color:#e8d08a;color:#8a6000}
+.sl-dot.sem-y2f  {background:#f5edfd;border-color:#c8a8e8;color:#5b1a8a}
+.sl-dot.sem-y2sp {background:#fde8e8;border-color:#e8a8a8;color:#8a1a1a}
+
+/* HEADER */
+.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:54px;flex-shrink:0;position:sticky;top:0;z-index:100}
+.brand{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--text)}.brand em{font-style:italic;color:var(--green)}
+.hdr-right{display:flex;align-items:center;gap:14px}
+.hstat{display:flex;flex-direction:column;align-items:center;gap:1px}
+.hstat-v{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text);line-height:1}
+.hstat-l{font-size:10px;color:var(--muted)}
+.hdiv{width:1px;height:26px;background:var(--border)}
+
+
+/* TABS */
+.tab-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;flex-shrink:0}
+.tab-btn{background:none;border:none;border-bottom:2.5px solid transparent;color:var(--muted);cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:500;padding:11px 16px 9px;transition:all .15s;display:flex;align-items:center;gap:6px}
+.tab-btn:hover{color:var(--text)}.tab-btn.active{color:var(--green);border-bottom-color:var(--green)}
+.tb{background:var(--surface2);border-radius:10px;font-size:10px;font-family:var(--mono);padding:1px 7px;color:var(--muted)}
+.tab-btn.active .tb{background:var(--gl);color:var(--green)}
+.tab-content{display:none;flex:1;overflow:auto}.tab-content.active{display:block}
+
+/* DASHBOARD */
+.dash{padding:20px 22px;max-width:1100px;margin:0 auto}
+.overall-card{background:var(--surface);border-radius:var(--rl2);box-shadow:var(--sh);padding:22px 26px;margin-bottom:18px;display:flex;align-items:center;gap:24px}
+.oc-label{font-family:var(--serif);font-size:20px;font-weight:700;flex-shrink:0}.oc-label span{font-style:italic;color:var(--green)}
+.oc-track{flex:1;height:18px;background:var(--surface2);border-radius:9px;overflow:hidden}
+.oc-fill{height:100%;background:linear-gradient(90deg,var(--gm),var(--gs));border-radius:9px;transition:width .6s cubic-bezier(.34,1.56,.64,1)}
+.oc-pct{font-family:var(--mono);font-size:19px;font-weight:500;color:var(--green);min-width:48px;text-align:right}
+.d3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.dmc{background:var(--surface);border-radius:var(--rl2);box-shadow:var(--sh);padding:16px 18px}
+.dml{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.dmn{display:flex;align-items:baseline;gap:5px;margin-bottom:8px}
+.dmb{font-family:var(--serif);font-size:30px;font-weight:700;line-height:1}
+.dmo{font-size:12px;color:var(--muted)}
+.pb{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.pf{height:100%;border-radius:3px;transition:width .5s ease}
+.d2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.dc{background:var(--surface);border-radius:var(--rl2);box-shadow:var(--sh);padding:18px 20px}
+.dct{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
+.cc-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)}
+.cc-row:last-child{border-bottom:none}
+.cc-name{font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cc-bar{width:90px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.cc-fill{height:100%;background:var(--gm);border-radius:3px;transition:width .5s}
+.cc-n{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:32px;text-align:right}
+.rr{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)}
+.rr:last-child{border-bottom:none}
+.rl{color:var(--muted);font-size:11px}
+.rv{font-family:var(--mono);font-size:12px;font-weight:500}
+.rv.g{color:var(--green)}.rv.w{color:var(--amber)}.rv.ok{color:var(--blue)}
+.gap-card{background:var(--surface);border-radius:var(--rl2);box-shadow:var(--sh);padding:18px 20px;margin-bottom:12px}
+.gct{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--red);text-transform:uppercase;margin-bottom:10px}
+.gpill{display:inline-block;background:var(--rl);border:1px solid #f5c6c0;color:var(--red);font-size:10px;font-family:var(--mono);border-radius:4px;padding:2px 6px;margin:2px}
+
+/* MAP LAYOUT */
+.ml{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 108px);overflow:hidden}
+.msb{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:12px 8px}
+.msbt{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;padding:0 6px 8px;border-bottom:1px solid var(--border)}
+.si{padding:7px 10px;border-radius:var(--r);cursor:pointer;transition:background .1s;margin-bottom:2px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.si:hover{background:var(--surface2)}.si.active{background:var(--gl);color:var(--green);font-weight:500}
+.si-name{flex:1;line-height:1.3}
+.sip{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.sipb{width:32px;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.sipf{height:100%;background:var(--gm);border-radius:2px}
+.sipt{font-family:var(--mono);font-size:9px;color:var(--dim);white-space:nowrap}
+.mm{overflow-y:auto;padding:22px 26px}
+.mmt{font-family:var(--serif);font-size:20px;font-weight:700;line-height:1.2;margin-bottom:4px}
+.mms{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;max-width:580px}
+.dk{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.dc2{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.dd{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ITEM CARDS */
+.icard{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rl2);margin-bottom:8px;overflow:hidden;box-shadow:var(--sh);transition:border-color .15s}
+.icard.hc{border-color:#b0dfc5}.icard.fc{border-color:var(--gm)}
+.ich{padding:12px 14px;display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.icb{font-family:var(--mono);font-size:10px;font-weight:500;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 7px;color:var(--muted);flex-shrink:0;margin-top:1px;white-space:nowrap}
+.icard.hc .icb{background:var(--gl);border-color:#b0dfc5;color:var(--green)}
+.ict{font-size:13px;flex:1;line-height:1.5}
+.icx{color:var(--dim);font-size:11px;margin-left:6px;flex-shrink:0;transition:transform .2s}
+.icard.open .icx{transform:rotate(180deg)}
+.icn{font-size:11px;color:var(--muted);margin-left:8px;white-space:nowrap}
+.icbody{display:none;border-top:1px solid var(--border);padding:12px 14px}
+.icard.open .icbody{display:block}
+.ci{font-size:11px;color:var(--muted);font-style:italic;margin-bottom:8px}
+.cgl{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;margin-bottom:10px}
+.cgi{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 10px;cursor:pointer;transition:all .15s;user-select:none}
+.cgi:hover{border-color:var(--border2)}
+.cgi.d1{background:var(--gl);border-color:#b0dfc5}
+.cgi.d2{background:var(--bl);border-color:#a8c4e8}
+.cgi.d3{background:var(--pl);border-color:#c5b8ef}
+.cgi-top{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.cgck{width:15px;height:15px;border:1.5px solid var(--border2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;flex-shrink:0;transition:all .15s}
+.cgi.d1 .cgck{background:var(--gm);border-color:var(--gm);color:#fff}
+.cgi.d2 .cgck{background:var(--bs);border-color:var(--bs);color:#fff}
+.cgi.d3 .cgck{background:var(--purple);border-color:var(--purple);color:#fff}
+.cgn{font-size:11px;font-weight:500;flex:1;line-height:1.3}
+.cgd{font-size:10px;color:var(--muted)}
+.cgi.d1 .cgd{color:var(--green)}.cgi.d2 .cgd{color:var(--blue)}.cgi.d3 .cgd{color:var(--purple)}
+.nl{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.ni{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 10px;outline:none;resize:none;min-height:32px;transition:border-color .15s}
+.ni:focus{border-color:var(--gm)}
+.divider{height:1px;background:var(--border);margin:8px 0}
+
+/* BINGO */
+.bingo-layout{padding:18px 22px}
+.btoolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.search{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;padding:7px 12px;outline:none;width:200px;box-shadow:var(--sh)}
+.search:focus{border-color:var(--gm)}
+.fchip{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;color:var(--muted);cursor:pointer;font-size:11px;padding:4px 11px;transition:all .1s;box-shadow:var(--sh)}
+.fchip:hover{border-color:var(--border2);color:var(--text)}
+.fchip.active{background:var(--gl);border-color:#b0dfc5;color:var(--green);font-weight:500}
+.fchip.red.active{background:var(--rl);border-color:#f5c6c0;color:var(--red)}
+.wbtn{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);color:var(--muted);cursor:pointer;font-family:var(--mono);font-size:11px;padding:5px 12px;transition:all .15s;box-shadow:var(--sh)}
+.wbtn:hover{border-color:var(--as);color:var(--amber);background:var(--al)}
+.bstats{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto}
+.bst{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.bst strong{font-family:var(--mono);color:var(--text);font-size:12px}
+.sys-filter{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.syschip{background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--muted);cursor:pointer;font-size:10px;padding:3px 9px;transition:all .1s}
+.syschip:hover{border-color:var(--border2)}.syschip.active{background:var(--surface2);border-color:var(--border2);color:var(--text);font-weight:500}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:6px}
+.ccard{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:9px 10px;cursor:pointer;transition:all .15s;min-height:62px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--sh)}
+.ccard:hover{transform:translateY(-1px);box-shadow:var(--shm);border-color:var(--border2)}
+.ccard.c1{background:var(--gl);border-color:#b0dfc5}
+.ccard.c2{background:#ddf0e6;border-color:#9ad5b5}
+.ccard.crich{background:#b0dfc5;border-color:#5cb88a}
+.ccard.unc{border-style:dashed}
+.cname{font-size:11px;font-weight:500;line-height:1.3;flex:1;color:var(--text)}
+.csys{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:1px}
+.ccov{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.ccard.c1 .ccov,.ccard.c2 .ccov,.ccard.crich .ccov{color:var(--green)}
+
+/* MODAL */
+.moverlay{position:fixed;inset:0;background:rgba(30,28,24,.55);backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.moverlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--rl2);box-shadow:var(--shm);padding:26px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto}
+.mey{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:5px}
+.mtitle{font-family:var(--serif);font-size:19px;font-weight:700;margin-bottom:4px}
+.mdesc{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+.mdnote{background:var(--surface2);border-radius:var(--r);padding:10px 12px;font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6}
+.msl{font-family:var(--mono);font-size:10px;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
+.mcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;margin-bottom:14px}
+.mcc{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:9px 11px;cursor:pointer;transition:all .15s}
+.mcc:hover{border-color:var(--border2)}
+.mcc.s1{background:var(--gl);border-color:#b0dfc5}
+.mcc.s2{background:var(--bl);border-color:#a8c4e8}
+.mcc.s3{background:var(--pl);border-color:#c5b8ef}
+.mcn{font-size:12px;font-weight:500;margin-bottom:5px;line-height:1.3}
+.mcd{display:flex;gap:3px}
+.dbt{font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);font-family:var(--mono);transition:all .1s}
+.dbt:hover{border-color:var(--border2)}
+.dbt.d1.a{background:var(--gl);border-color:#b0dfc5;color:var(--green);font-weight:500}
+.dbt.d2.a{background:var(--bl);border-color:#a8c4e8;color:var(--blue);font-weight:500}
+.dbt.d3.a{background:var(--pl);border-color:#c5b8ef;color:var(--purple);font-weight:500}
+.mns{margin-bottom:14px}
+.mni{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:12px;padding:8px 11px;outline:none;resize:vertical;min-height:50px;transition:border-color .15s}
+.mni:focus{border-color:var(--gm)}
+.mact{display:flex;gap:7px;justify-content:flex-end}
+
+/* EXPORT */
+.exp{padding:22px;max-width:900px}
+.expa{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.exst{font-family:var(--serif);font-size:15px;font-weight:700;margin-bottom:10px;padding-bottom:7px;border-bottom:1.5px solid var(--border)}
+
+/* TEACHING OPPORTUNITIES */
+.tch-layout{padding:24px 28px;max-width:860px}
+.tch-header{margin-bottom:24px}
+.tch-title{font-family:var(--serif);font-size:22px;font-weight:700;margin-bottom:6px}
+.tch-sub{font-size:14px;color:var(--muted);line-height:1.6}
+.tch-course-section{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rl2);box-shadow:var(--sh);margin-bottom:16px;overflow:hidden}
+.tch-course-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.tch-course-name{font-size:14px;font-weight:600;flex:1}
+.tch-checked-count{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.tch-course-header.has-selections .tch-checked-count{color:var(--green)}
+.tch-options{padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.tch-option{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:var(--r);cursor:pointer;transition:background .1s;user-select:none;border:1.5px solid transparent}
+.tch-option:hover{background:var(--surface2)}
+.tch-option.selected{background:var(--gl);border-color:#b0dfc5}
+.tch-cb{width:18px;height:18px;border:1.5px solid var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;flex-shrink:0;margin-top:1px;transition:all .15s}
+.tch-option.selected .tch-cb{background:var(--green);border-color:var(--green);color:#fff}
+.tch-option-text{font-size:13px;line-height:1.4;flex:1}
+.tch-other-wrap{margin-top:6px;padding-left:28px}
+.tch-other-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 11px;outline:none;resize:vertical;min-height:48px;transition:border-color .15s}
+.tch-other-input:focus{border-color:var(--gm)}
+.xl-panel{background:var(--surface);border-radius:var(--rl2);box-shadow:var(--shm);padding:24px;margin-bottom:20px;border:1.5px solid var(--border)}
+.xl-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.xl-icon{font-size:28px;flex-shrink:0}
+.xl-title{font-family:var(--serif);font-size:17px;font-weight:700;margin-bottom:3px}
+.xl-sub{font-size:12px;color:var(--muted);line-height:1.6;max-width:520px}
+.xl-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.xl-note{background:var(--gl);border:1px solid #b0dfc5;border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--green);line-height:1.6}
+
+/* SESSION BACKUP */
+.sess-panel{background:var(--surface2);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.sess-title{font-weight:600;font-size:13px}
+.sess-sub{font-size:12px;color:var(--muted);flex:1}
+.sess-row{display:flex;gap:8px;flex-shrink:0}
+table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:20px}
+th{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:.06em;padding:6px 8px;text-align:left}
+td{border:1px solid var(--border);padding:5px 8px;color:var(--text);vertical-align:top;background:var(--surface)}
+tr:hover td{background:var(--surface2)}
+
+/* TOAST */
+.toasts{position:fixed;bottom:22px;right:22px;z-index:999;display:flex;flex-direction:column;gap:6px}
+.toast{background:var(--surface);border-radius:var(--r);box-shadow:var(--shm);padding:9px 14px;font-size:12px;max-width:320px;animation:tin .2s ease;border-left:3px solid var(--gm)}
+.toast.amber{border-left-color:var(--as)}.toast.blue{border-left-color:var(--bs)}
+@keyframes tin{from{transform:translateX(16px);opacity:0}to{transform:translateX(0);opacity:1}}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.anno{font-size:11px;color:var(--muted);font-style:italic;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup" class="screen active">
+<div class="setup-wrap">
+  <div class="eyebrow">UT Southwestern · GC Program · Instructor Retreat — June 23, 2026</div>
+  <h1 class="setup-title">Welcome to<br><em>Mapping Across the Curriculum</em></h1>
+  <p class="setup-lead">Map your course(s) against ACGC Practice-Based Competencies, Instructional Content Areas, and all 135 ABGC conditions. Select your course(s) below — you'll only see what's yours in the activity.</p>
+
+  <div class="card">
+    <div class="fg">
+      <label class="fl">Course Instructor Name(s)</label>
+      <input type="text" id="instructor-name" placeholder="e.g. Dr. Jane Smith" autocomplete="name">
+    </div>
+
+    <div class="fg">
+      <label class="fl">Your course(s) — select all that apply</label>
+      <div class="course-picker" id="course-picker"></div>
+      <p class="anno" id="picker-count" style="margin-top:8px">No courses selected</p>
+    </div>
+
+    <div class="depth-note">
+      <strong>Coverage depth</strong> — for each item tag how deeply your course covers it:<br>
+      🟢 <strong>Primary</strong> — core focus; explicitly taught and assessed<br>
+      🔵 <strong>Secondary</strong> — meaningfully addressed but not the central focus
+    </div>
+  </div>
+
+  <div class="launch-row">
+    <button class="btn btn-primary" id="lbtn" onclick="launch()" disabled style="font-size:15px;font-weight:600;padding:12px 28px">
+      Start mapping →
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- APP -->
+<div id="app" class="screen">
+  <header class="app-header">
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <div class="brand">Mapping Across the <em>Curriculum</em></div>
+      <div class="sem-legend">
+        <span class="sl-dot sem-y1f">Y1 Fall</span>
+        <span class="sl-dot sem-y1sp">Y1 Spring</span>
+        <span class="sl-dot sem-y1su">Y1 Summer</span>
+        <span class="sl-dot sem-y2f">Y2 Fall</span>
+        <span class="sl-dot sem-y2sp">Y2 Spring</span>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="hstat"><div class="hstat-v" id="hinstructor" style="color:var(--green);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">—</div><div class="hstat-l">Instructor</div></div>
+      <div class="hdiv"></div>
+      <div class="hstat"><div class="hstat-v" id="hpbc">0/25</div><div class="hstat-l">PBCs</div></div>
+      <div class="hdiv"></div>
+      <div class="hstat"><div class="hstat-v" id="hica">0/9</div><div class="hstat-l">Content Areas</div></div>
+      <div class="hdiv"></div>
+      <div class="hstat"><div class="hstat-v" id="hcond">0/135</div><div class="hstat-l">Conditions</div></div>
+      <div class="hdiv"></div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="switchTab('export',document.querySelectorAll('.tab-btn')[4])">Export data</button>
+    <button class="btn btn-green" onclick="openSubmitModal()" style="font-size:13px;padding:8px 16px">Submit my responses →</button>
+  </header>
+
+  <!-- WEBHOOK CONFIG BANNER (shown until configured) -->
+  <div id="webhook-banner" style="display:none;background:var(--al);border-bottom:1px solid var(--as);padding:8px 20px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:10px">
+    <span>⚠ Power Automate webhook not configured — submissions won't be saved to OneDrive until you add the URL.</span>
+    <button onclick="document.getElementById('webhook-banner').style.display='none'" style="background:none;border:none;color:var(--amber);cursor:pointer;font-size:16px;line-height:1;margin-left:auto">×</button>
+  </div>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('dashboard',this)">Dashboard <span class="tb">Live</span></button>
+    <button class="tab-btn" onclick="switchTab('pbc',this)">Practice-Based Competencies <span class="tb" id="tbpbc">0/25</span></button>
+    <button class="tab-btn" onclick="switchTab('ica',this)">Instructional Content <span class="tb" id="tbica">0/9</span></button>
+    <button class="tab-btn" onclick="switchTab('conditions',this)">135 Conditions <span class="tb" id="tbcond">0/135</span></button>
+    <button class="tab-btn" onclick="switchTab('teaching',this)">Teaching Opportunities <span class="tb" id="tbtch">—</span></button>
+    <button class="tab-btn" onclick="switchTab('export',this)">Export</button>
+  </nav>
+
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="dash">
+      <div class="overall-card">
+        <div class="oc-label">Program <span>Coverage</span></div>
+        <div class="oc-track"><div class="oc-fill" id="ocfill" style="width:0%"></div></div>
+        <div class="oc-pct" id="ocpct">0%</div>
+      </div>
+      <div class="d3">
+        <div class="dmc"><div class="dml">PBC Sub-competencies</div><div class="dmn"><div class="dmb" style="color:var(--green)" id="dpbc">0</div><div class="dmo">/ 25</div></div><div class="pb"><div class="pf" id="ppbc" style="width:0%;background:var(--gm)"></div></div></div>
+        <div class="dmc"><div class="dml">Instructional Content items</div><div class="dmn"><div class="dmb" style="color:var(--amber)" id="dica">0</div><div class="dmo">/ <span id="dica-total">63</span></div></div><div class="pb"><div class="pf" id="pica" style="width:0%;background:var(--as)"></div></div></div>
+        <div class="dmc"><div class="dml">Conditions covered</div><div class="dmn"><div class="dmb" style="color:var(--blue)" id="dcond">0</div><div class="dmo">/ 135</div></div><div class="pb"><div class="pf" id="pcond" style="width:0%;background:var(--bs)"></div></div></div>
+      </div>
+      <div class="d2">
+        <div class="dc"><div class="dct">Course contributions</div><div id="cc-list"></div></div>
+        <div class="dc"><div class="dct">Collective redundancy health</div><div id="rr-list"></div><div class="divider"></div><div style="font-size:11px;color:var(--muted);line-height:1.7;margin-top:4px"><strong style="color:var(--text)">Redundancy is a strength</strong> — items taught across multiple courses create robust learning. Sole-coverage items are fragility risks.</div></div>
+      </div>
+      <div class="gap-card"><div class="gct">⚠ Uncovered gaps</div><div id="gap-content" style="color:var(--muted);font-size:12px">Start mapping to see gaps.</div></div>
+    </div>
+  </div>
+
+  <div id="tab-pbc" class="tab-content">
+    <div class="ml">
+      <div class="msb"><div class="msbt">7 Competency Domains</div><div id="pbc-sb"></div></div>
+      <div class="mm" id="pbc-mm"><div style="color:var(--muted);padding-top:50px;text-align:center;font-size:13px;font-style:italic">Select a domain →</div></div>
+    </div>
+  </div>
+
+  <div id="tab-ica" class="tab-content">
+    <div class="ml">
+      <div class="msb"><div class="msbt">ACGC Content Areas (B2.1)</div><div id="ica-sb"></div></div>
+      <div class="mm" id="ica-mm"><div style="color:var(--muted);padding-top:50px;text-align:center;font-size:13px;font-style:italic">Select a content area →</div></div>
+    </div>
+  </div>
+
+  <div id="tab-conditions" class="tab-content">
+    <div class="bingo-layout">
+      <div class="btoolbar">
+        <input type="text" class="search" id="csearch" placeholder="Search conditions…" oninput="renderBingo()">
+        <button class="fchip active" onclick="setFilt('all',this)">All 135</button>
+        <button class="fchip" onclick="setFilt('covered',this)">Covered</button>
+        <button class="fchip red" onclick="setFilt('gap',this)">Gaps</button>
+        <button class="fchip" onclick="setFilt('rich',this)">3+ courses</button>
+        <button class="wbtn" onclick="drawWild()">🎲 Wildcard</button>
+        <div class="bstats">
+          <div class="bst"><strong id="bscov">0</strong> covered</div>
+          <div class="bst"><strong id="bsgap">135</strong> gaps</div>
+          <div class="bst"><strong id="bsrich">0</strong> well-covered</div>
+        </div>
+      </div>
+      <div class="sys-filter" id="sys-filter"></div>
+      <div class="bgrid" id="bgrid"></div>
+    </div>
+  </div>
+
+  <!-- TEACHING OPPORTUNITIES TAB -->
+  <div id="tab-teaching" class="tab-content">
+    <div class="tch-layout">
+      <div class="tch-header">
+        <div class="tch-title">Teaching Opportunities</div>
+        <div class="tch-sub">Does your course include any of the following teaching opportunities? Check all that apply.</div>
+      </div>
+
+      <div class="tch-course-sections" id="tch-course-sections">
+        <!-- Rendered per course by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT TAB -->
+    <div class="exp">
+
+      <!-- EXCEL EXPORT PANEL -->
+      <div class="xl-panel">
+        <div class="xl-header">
+          <div class="xl-icon">📊</div>
+          <div>
+            <div class="xl-title">Export to Excel</div>
+            <div class="xl-sub">Download your full curriculum mapping as a formatted .xlsx workbook — one sheet each for PBCs, Instructional Content, and all 135 Conditions. Color-coded by coverage depth. Opens directly in Excel or Google Sheets.</div>
+          </div>
+        </div>
+        <div class="xl-actions">
+          <button class="btn btn-green" onclick="dlExcel()" style="font-size:14px;padding:11px 22px">
+            ⬇ Download Full Excel Workbook
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="dlCSV('pbc')">⬇ PBC CSV only</button>
+          <button class="btn btn-outline btn-sm" onclick="dlCSV('ica')">⬇ Content Areas CSV only</button>
+          <button class="btn btn-outline btn-sm" onclick="dlCSV('cond')">⬇ Conditions CSV only</button>
+        </div>
+        <div class="xl-note">
+          ✓ The workbook includes a <strong>Summary sheet</strong> with overall coverage stats, plus one sheet each for PBCs, Instructional Content Areas, and Conditions — all color-coded (🟢 Primary, 🔵 Secondary, 🔴 Gap).
+        </div>
+      </div>
+
+      <!-- SESSION FILE -->
+      <div class="sess-panel">
+        <div class="sess-title">Session file</div>
+        <div class="sess-sub">Save your session as a JSON file to return to later, or load a previous session from any device.</div>
+        <div class="sess-row">
+          <button class="btn btn-outline btn-sm" onclick="dlSession()">⬇ Save session</button>
+          <label class="btn btn-outline btn-sm" style="cursor:pointer">
+            ⬆ Load session
+            <input type="file" accept=".json" onchange="loadSession(event)" style="display:none">
+          </label>
+        </div>
+      </div>
+
+      <!-- PREVIEW TABLES -->
+      <div class="exst">PBC Coverage Preview</div><div id="exp-pbc"></div>
+      <div class="exst">Instructional Content Preview</div><div id="exp-ica"></div>
+      <div class="exst">Conditions Preview</div><div id="exp-cond"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT MODAL -->
+<div class="moverlay" id="submit-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="mey">Ready to submit?</div>
+    <div class="mtitle" id="sm-title">Submit your mapping</div>
+    <div class="mdesc" id="sm-desc">Your responses will be sent to the facilitator's OneDrive Excel file.</div>
+
+    <div id="sm-summary" style="background:var(--surface2);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.8"></div>
+
+    <div id="sm-status" style="min-height:24px;font-size:12px;color:var(--muted);margin-bottom:14px;font-style:italic"></div>
+
+    <div class="mact">
+      <button class="btn btn-outline btn-sm" onclick="closeSubmitModal()">Cancel</button>
+      <button class="btn btn-green" id="sm-btn" onclick="submitResponses()">
+        Submit to OneDrive →
+      </button>
+    </div>
+
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Also download a local backup</div>
+      <button class="btn btn-outline btn-sm" onclick="dlSession()">⬇ Save session file</button>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM MODAL -->
+<div class="moverlay" id="modal">
+  <div class="modal">
+    <div class="mey" id="mey">Item</div>
+    <div class="mtitle" id="mtitle">—</div>
+    <div class="mdesc" id="mdesc"></div>
+    <div class="mdnote">Select depth for each course. <strong>Multiple courses covering the same item is encouraged</strong> — overlap is a curriculum strength, not redundancy to eliminate.</div>
+    <div class="msl">Course coverage</div>
+    <div class="mcg" id="mcg"></div>
+    <div class="mns"><div class="msl">Group notes (optional)</div><textarea class="mni" id="mnotes" placeholder="Context, discussion points, or 'we should add this' notes…"></textarea></div>
+    <div class="mact"><button class="btn btn-outline btn-sm" onclick="closeModal()">Cancel</button><button class="btn btn-green btn-sm" onclick="saveModal()">Save mapping</button></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// DATA — Real sources
+// ══════════════════════════════════════════════════════
+
+const PBC_DATA = [
+  {id:1,code:"1",name:"Genetics & Genomics Expertise",
+   summary:"Apply knowledge of genetics and genomics principles, genetic conditions, and testing technologies to the practice of genetic counseling.",
+   subs:[
+    {id:"1a",code:"1.a",text:"Demonstrate knowledge of genetics and genomics principles and concepts."},
+    {id:"1b",code:"1.b",text:"Apply knowledge of genetic conditions to the delivery of genetics services."},
+    {id:"1c",code:"1.c",text:"Demonstrate knowledge of genetic testing methodologies and variant interpretation."},
+  ]},
+  {id:2,code:"2",name:"Risk Assessment",
+   summary:"Evaluate personalized genetic risk.",
+   subs:[
+    {id:"2a",code:"2.a",text:"Analyze family history to estimate genetic risk."},
+    {id:"2b",code:"2.b",text:"Calculate risk using probability methods and risk models."},
+    {id:"2c",code:"2.c",text:"Integrate clinical and laboratory data into risk assessment."},
+    {id:"2d",code:"2.d",text:"Order genetic tests guided by client-centered risk assessment."},
+  ]},
+  {id:3,code:"3",name:"Counseling",
+   summary:"Promote integration of psychosocial needs and client-centered decision-making into genetic counseling interactions.",
+   subs:[
+    {id:"3a",code:"3.a",text:"Use applicable counseling skills and theories."},
+    {id:"3b",code:"3.b",text:"Establish a working alliance with client."},
+    {id:"3c",code:"3.c",text:"Promote psychosocial adaptation."},
+    {id:"3d",code:"3.d",text:"Facilitate client's decision-making process."},
+  ]},
+  {id:4,code:"4",name:"Communication",
+   summary:"Communicate genetics and genomics information to clients, colleagues, and other community partners.",
+   subs:[
+    {id:"4a",code:"4.a",text:"Tailor communication to specific individuals and audiences."},
+    {id:"4b",code:"4.b",text:"Use a variety of approaches to communicate genetics and genomic information."},
+    {id:"4c",code:"4.c",text:"Convey probabilities based on client's risk perception and numeracy."},
+  ]},
+  {id:5,code:"5",name:"Research",
+   summary:"Synthesize the evidence base relevant to genetic counseling.",
+   subs:[
+    {id:"5a",code:"5.a",text:"Critically interpret data and literature."},
+    {id:"5b",code:"5.b",text:"Apply data and literature considering its strengths, weaknesses, and limitations."},
+    {id:"5c",code:"5.c",text:"Demonstrate knowledge of how genetic counselors engage and contribute to the research process."},
+  ]},
+  {id:6,code:"6",name:"Healthcare Systems",
+   summary:"Demonstrate how genetic counselors fit within the larger healthcare system.",
+   subs:[
+    {id:"6a",code:"6.a",text:"Demonstrate how disparities, inequities, and systemic bias affect access to healthcare for diverse populations."},
+    {id:"6b",code:"6.b",text:"Describe the financial considerations in the delivery of genetic services."},
+    {id:"6c",code:"6.c",text:"Advocate for continuity of care."},
+    {id:"6d",code:"6.d",text:"Collaborate with members of the Care Team, clients, and other Community Partners."},
+  ]},
+  {id:7,code:"7",name:"Professional Identity",
+   summary:"Embody the values of the genetic counseling profession.",
+   subs:[
+    {id:"7a",code:"7.a",text:"Adhere to the genetic counselor scope of practice."},
+    {id:"7b",code:"7.b",text:"Follow applicable professional ethical codes."},
+    {id:"7c",code:"7.c",text:"Exhibit behaviors that promote an inclusive, just, equitable, and safe environment for all individuals and communities."},
+    {id:"7d",code:"7.d",text:"Engage in self-reflective practice to promote ongoing growth and development."},
+  ]},
+];
+
+// ACGC Instructional Content Areas — Section B2.1 (Standards of Accreditation 2023)
+const ICA_DATA = [
+  {id:"B2.1.2", name:"Principles of Human Genetics/Genomics",
+   items:[
+    "Mendelian and non-Mendelian inheritance",
+    "Population and quantitative genetics",
+    "Human variation and disease susceptibility",
+    "Family history and pedigree analysis",
+    "Normal/abnormal human development",
+    "Human reproduction",
+    "Personalized genomic medicine",
+    "Cytogenetics",
+    "Biochemical genetics",
+    "Molecular genetics",
+    "Embryology/developmental genetics",
+    "Teratology",
+    "Variant classification and interpretation",
+  ]},
+  {id:"B2.1.3", name:"Principles of Genetic Counseling & Clinical Genetics",
+   items:[
+    "Clinical features and natural history of a broad range of genetic diseases, complex common disorders and syndromes of unknown etiology",
+    "The diagnostic process (dysmorphology, syndromology, physical assessment, differential diagnoses)",
+    "Case management across genetic counseling specialties (preconception, prenatal, pediatrics, general genetics, cancer, cardiology, neurogenetics, genomic medicine, laboratory)",
+    "Modalities, methods, and applications of cytogenetic, molecular, and biochemical tests including new/emerging technologies",
+    "Incorporation of individual client factors (medical history, family history, systemic barriers) in selecting genetic testing plan",
+    "Responsibilities related to ordering genetic testing (interpretation, follow-up, liability)",
+    "Approaches to choosing appropriate clinical and research laboratories; analytic, clinical, and utility evaluation",
+    "Role of genetic counselors in laboratory settings (performance, interpretation, test development, customer liaison, sales/marketing)",
+    "Risk assessment",
+    "Use of genetics literature, bioinformatics, and computerized tools",
+  ]},
+  {id:"B2.1.4", name:"Psychosocial Content",
+   items:[
+    "Theories of counseling",
+    "Interviewing techniques",
+    "Promoting informed decision making",
+    "Facilitating adaptation",
+    "Psychosocial development",
+    "Psychosocial assessment",
+    "Family dynamics",
+    "Dynamics of grief and bereavement",
+    "Crisis intervention",
+  ]},
+  {id:"B2.1.5", name:"Social, Ethical & Legal Issues in Genetics",
+   items:[
+    "NSGC/CAGC Code of Ethics",
+    "Patient/subject privacy issues",
+    "Genetic discrimination and related legislation (GINA, ADA)",
+  ]},
+  {id:"B2.1.6", name:"Health Care Delivery Systems & Public Health",
+   items:[
+    "Health and social policy",
+    "Community, regional, and national resources",
+    "Financial/reimbursement issues",
+    "Population-based screening (newborn screening, carrier screening)",
+    "Genetics/Genomics as a component of public health services",
+  ]},
+  {id:"B2.1.7", name:"Education",
+   items:[
+    "Identification of genetics educational needs of clients, patients, community groups, students, and health professionals",
+    "Development of educational tools and materials appropriate to a given audience",
+    "Delivery and evaluation of educational tools and materials",
+  ]},
+  {id:"B2.1.8", name:"Research Methods",
+   items:[
+    "Clinical and laboratory research methodologies and protocol development (quantitative and qualitative)",
+    "Formulation of research questions, data collection, and data analysis",
+    "Dissemination of findings (oral and written)",
+    "Human subjects protection and IRB processes",
+  ]},
+  {id:"B2.1.9", name:"Professional Development",
+   items:[
+    "Certification examination preparation",
+    "Employment preparation",
+    "Transitioning into the workforce",
+    "Credentialing and licensure",
+    "Opportunities for professional growth",
+    "Self-care topics to prepare students for genetic counseling practice",
+  ]},
+  {id:"B2.1.1", name:"Diversity, Equity, Inclusion & Justice",
+   items:[
+    "Awareness of multiple forms of identity (age, race, ethnicity, sex, gender, sexual orientation, socioeconomic status, country of origin, culture, language, religion, disability, etc.)",
+    "Personal identity and implicit bias",
+    "Critical historical events affecting diverse client populations and the genetic counseling field",
+    "Systemic health care disparities and social determinants of health",
+    "Addressing and preventing instances of prejudice and discrimination",
+  ]},
+];
+
+// StudyRare 135 Conditions — exact list from ABGC CGC Self-Study Guide (Dec 2025)
+const CONDITIONS = [
+  {n:1,sys:"Hepatology",name:"Alagille syndrome"},
+  {n:2,sys:"Neurology",name:"Ataxias (overview)"},
+  {n:3,sys:"Neurology",name:"Spinocerebellar ataxias (SCA1)"},
+  {n:4,sys:"Neurology",name:"Spinocerebellar ataxias (SCA2)"},
+  {n:5,sys:"Neurology",name:"Spinocerebellar ataxias (SCA3)"},
+  {n:6,sys:"Neurology",name:"Spinocerebellar ataxias (SCA6)"},
+  {n:7,sys:"Neurology",name:"Spinocerebellar ataxias (SCA7)"},
+  {n:8,sys:"Neurology",name:"Friedreich ataxia"},
+  {n:9,sys:"Multisystem",name:"Bardet-Biedl syndrome"},
+  {n:10,sys:"Hematology",name:"Factor V Leiden"},
+  {n:11,sys:"Hematology",name:"Hemophilia A"},
+  {n:12,sys:"Hematology",name:"Hemophilia B"},
+  {n:13,sys:"Neurology",name:"CADASIL"},
+  {n:14,sys:"Neurology",name:"Canavan disease"},
+  {n:15,sys:"Chromosomal",name:"Triploidy"},
+  {n:16,sys:"Chromosomal",name:"Trisomy 13"},
+  {n:17,sys:"Chromosomal",name:"Trisomy 18"},
+  {n:18,sys:"Chromosomal",name:"Trisomy 21 (Down syndrome)"},
+  {n:19,sys:"Chromosomal",name:"Klinefelter syndrome"},
+  {n:20,sys:"Chromosomal",name:"Turner syndrome"},
+  {n:21,sys:"Chromosomal",name:"22q11.2 deletion syndrome"},
+  {n:22,sys:"Chromosomal",name:"Angelman syndrome"},
+  {n:23,sys:"Chromosomal",name:"Cri-du-chat syndrome"},
+  {n:24,sys:"Chromosomal",name:"Prader-Willi syndrome"},
+  {n:25,sys:"Chromosomal",name:"Smith-Magenis syndrome"},
+  {n:26,sys:"Chromosomal",name:"Williams syndrome"},
+  {n:27,sys:"Chromosomal",name:"Wolf-Hirschhorn syndrome"},
+  {n:28,sys:"Endocrinology",name:"Congenital adrenal hyperplasia"},
+  {n:29,sys:"Cardiology",name:"Dilated cardiomyopathy"},
+  {n:30,sys:"Cardiology",name:"Hypertrophic cardiomyopathy"},
+  {n:31,sys:"Cardiology",name:"Arrhythmogenic right ventricular cardiomyopathy"},
+  {n:32,sys:"Cardiology",name:"Restrictive cardiomyopathy"},
+  {n:33,sys:"Cardiology",name:"Catecholaminergic polymorphic ventricular tachycardia"},
+  {n:34,sys:"Cardiology",name:"Long QT syndrome"},
+  {n:35,sys:"Cardiology",name:"Sudden cardiac arrest"},
+  {n:36,sys:"Connective Tissue",name:"Marfan syndrome"},
+  {n:37,sys:"Connective Tissue",name:"Loeys-Dietz syndrome"},
+  {n:38,sys:"Connective Tissue",name:"Hypermobile Ehlers-Danlos syndrome"},
+  {n:39,sys:"Connective Tissue",name:"Classic Ehlers-Danlos syndrome"},
+  {n:40,sys:"Connective Tissue",name:"Vascular Ehlers-Danlos syndrome"},
+  {n:41,sys:"Craniofacial",name:"Treacher Collins syndrome"},
+  {n:42,sys:"Craniofacial",name:"Craniosynostosis syndromes — Crouzon"},
+  {n:43,sys:"Craniofacial",name:"Craniosynostosis syndromes — Pfeiffer"},
+  {n:44,sys:"Craniofacial",name:"Craniosynostosis syndromes — Apert"},
+  {n:45,sys:"Craniofacial",name:"Holoprosencephaly"},
+  {n:46,sys:"Craniofacial",name:"Pierre Robin sequence"},
+  {n:47,sys:"Craniofacial",name:"Cleft lip and palate"},
+  {n:48,sys:"Pulmonology",name:"Cystic fibrosis"},
+  {n:49,sys:"Neurology",name:"DEPDC5-related epilepsy"},
+  {n:50,sys:"Neurology",name:"KCNQ2-related disorders"},
+  {n:51,sys:"Neurology",name:"SCN1A seizure disorders"},
+  {n:52,sys:"Cardiology",name:"Familial hypercholesterolemia"},
+  {n:53,sys:"Hematology",name:"Fanconi anemia"},
+  {n:54,sys:"Neurodevelopmental",name:"Fragile X syndrome"},
+  {n:55,sys:"Hearing Loss",name:"Hearing loss (overview)"},
+  {n:56,sys:"Hearing Loss",name:"Branchio-oto-renal syndrome"},
+  {n:57,sys:"Hearing Loss",name:"Stickler syndrome"},
+  {n:58,sys:"Hearing Loss",name:"Usher syndrome type I"},
+  {n:59,sys:"Hearing Loss",name:"Usher syndrome type II"},
+  {n:60,sys:"Hearing Loss",name:"Pendred syndrome"},
+  {n:61,sys:"Cancer",name:"APC-associated polyposis conditions"},
+  {n:62,sys:"Cancer",name:"ATM-related disorders (Ataxia-Telangiectasia)"},
+  {n:63,sys:"Cancer",name:"BRCA1/BRCA2 hereditary breast and ovarian cancer"},
+  {n:64,sys:"Cancer",name:"CDH1 hereditary diffuse gastric cancer"},
+  {n:65,sys:"Cancer",name:"Lynch syndrome (MLH1/MSH2/MSH6/PMS2/EPCAM)"},
+  {n:66,sys:"Cancer",name:"MEN1 — Multiple endocrine neoplasia type 1"},
+  {n:67,sys:"Cancer",name:"MUTYH polyposis"},
+  {n:68,sys:"Cancer",name:"PTEN hamartoma tumor syndrome"},
+  {n:69,sys:"Cancer",name:"RET — Multiple endocrine neoplasia type 2"},
+  {n:70,sys:"Cancer",name:"SDH paraganglioma-pheochromocytoma syndromes"},
+  {n:71,sys:"Cancer",name:"STK11 Peutz-Jeghers syndrome"},
+  {n:72,sys:"Cancer",name:"TP53 Li-Fraumeni syndrome"},
+  {n:73,sys:"Cancer",name:"VHL Von Hippel-Lindau syndrome"},
+  {n:74,sys:"Cancer",name:"Juvenile polyposis syndrome (BMPR1A/SMAD4)"},
+  {n:75,sys:"Hematology",name:"Hemochromatosis"},
+  {n:76,sys:"Hematology",name:"Hemoglobinopathies — Alpha-thalassemia"},
+  {n:77,sys:"Hematology",name:"Hemoglobinopathies — Beta-thalassemia"},
+  {n:78,sys:"Hematology",name:"Hemoglobinopathies — Sickle cell disease"},
+  {n:79,sys:"Neurology",name:"L1CAM-associated hydrocephalus (L1 syndrome)"},
+  {n:80,sys:"Multisystem",name:"Meckel-Gruber syndrome"},
+  {n:81,sys:"Mitochondrial",name:"Leigh syndrome"},
+  {n:82,sys:"Mitochondrial",name:"Leber hereditary optic neuropathy"},
+  {n:83,sys:"Mitochondrial",name:"Mitochondrial DNA deletion syndromes"},
+  {n:84,sys:"Mitochondrial",name:"MELAS syndrome"},
+  {n:85,sys:"Metabolic",name:"Malignant hyperthermia"},
+  {n:86,sys:"Metabolic",name:"VLCADD (very long-chain acyl-CoA dehydrogenase deficiency)"},
+  {n:87,sys:"Metabolic",name:"MCADD (medium-chain acyl-CoA dehydrogenase deficiency)"},
+  {n:88,sys:"Metabolic",name:"Adrenoleukodystrophy (X-linked)"},
+  {n:89,sys:"Metabolic",name:"Tyrosinemia type I"},
+  {n:90,sys:"Metabolic",name:"Glutaric acidemia type 1"},
+  {n:91,sys:"Metabolic",name:"Maple syrup urine disease"},
+  {n:92,sys:"Metabolic",name:"Ornithine transcarbamylase deficiency"},
+  {n:93,sys:"Metabolic",name:"Phenylketonuria (PKU)"},
+  {n:94,sys:"Metabolic",name:"Galactosemia"},
+  {n:95,sys:"Metabolic",name:"Glycogen storage disease type I"},
+  {n:96,sys:"Metabolic",name:"Glycogen storage disease type II (Pompe)"},
+  {n:97,sys:"Metabolic",name:"Glycogen storage disease type III"},
+  {n:98,sys:"Metabolic",name:"Fabry disease"},
+  {n:99,sys:"Metabolic",name:"Gaucher disease"},
+  {n:100,sys:"Metabolic",name:"Krabbe disease"},
+  {n:101,sys:"Metabolic",name:"Tay-Sachs disease"},
+  {n:102,sys:"Metabolic",name:"Mucopolysaccharidosis type I (Hurler)"},
+  {n:103,sys:"Metabolic",name:"Mucopolysaccharidosis type II (Hunter)"},
+  {n:104,sys:"Metabolic",name:"Mucopolysaccharidosis type III (Sanfilippo)"},
+  {n:105,sys:"Metabolic",name:"Mucopolysaccharidosis type IVA (Morquio)"},
+  {n:106,sys:"Endocrinology",name:"McCune-Albright syndrome"},
+  {n:107,sys:"Metabolic",name:"MTHFR gene variants"},
+  {n:108,sys:"Neurology",name:"Dementia (overview)"},
+  {n:109,sys:"Neurology",name:"Amyotrophic lateral sclerosis (ALS)"},
+  {n:110,sys:"Neurology",name:"Huntington disease"},
+  {n:111,sys:"Neurology",name:"Alzheimer disease"},
+  {n:112,sys:"Neurology",name:"Frontotemporal dementia (GRN)"},
+  {n:113,sys:"Neurology",name:"Frontotemporal dementia (MAPT)"},
+  {n:114,sys:"Neuromuscular",name:"Myotonic dystrophy type 1"},
+  {n:115,sys:"Neuromuscular",name:"Myotonic dystrophy type 2"},
+  {n:116,sys:"Neuromuscular",name:"Spinal muscular atrophy (SMA)"},
+  {n:117,sys:"Neuromuscular",name:"Charcot-Marie-Tooth disease"},
+  {n:118,sys:"Neuromuscular",name:"Dystrophinopathies (Duchenne/Becker MD)"},
+  {n:119,sys:"Neurology",name:"Tuberous sclerosis complex"},
+  {n:120,sys:"Neurology",name:"Neurofibromatosis type 1"},
+  {n:121,sys:"Neurology",name:"Neurofibromatosis type 2"},
+  {n:122,sys:"RASopathies",name:"Noonan syndrome"},
+  {n:123,sys:"RASopathies",name:"Costello syndrome"},
+  {n:124,sys:"RASopathies",name:"Cardiofaciocutaneous syndrome"},
+  {n:125,sys:"Skeletal",name:"Osteogenesis imperfecta"},
+  {n:126,sys:"Nephrology",name:"Polycystic kidney disease (autosomal dominant)"},
+  {n:127,sys:"Nephrology",name:"Polycystic kidney disease (autosomal recessive)"},
+  {n:128,sys:"Ophthalmology",name:"Retinoblastoma"},
+  {n:129,sys:"Neurology",name:"Rett syndrome"},
+  {n:130,sys:"Skeletal",name:"Achondroplasia"},
+  {n:131,sys:"Skeletal",name:"Thanatophoric dysplasia"},
+  {n:132,sys:"Metabolic",name:"Smith-Lemli-Opitz syndrome"},
+  {n:133,sys:"Cardiology",name:"Transthyretin amyloidosis"},
+  {n:134,sys:"Neuromuscular",name:"Walker-Warburg syndrome"},
+  {n:135,sys:"Hepatology",name:"Wilson disease"},
+];
+
+// Depth helpers
+const DEPTH={1:"Primary",2:"Secondary"};
+const DDOT={1:"#2da868",2:"#3b82f6"};
+const DCLS={1:"d1",2:"d2"};
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let S={
+  retreatName:"Mapping Across the Curriculum — UTSWGCP Instructor Retreat 2026",
+  instructorName:"",
+  myCourses:[],
+  courses:[],
+  pbc:{},
+  ica:{},
+  cond:{},
+  notes:{},
+  teaching:{}, // {[courseName]: {options: Set of selected option ids, otherText: string}}
+  submitVersion:0,        // increments each time they submit
+  lastSubmittedAt:null,   // ISO timestamp of most recent submission
+};
+let selPbc=null,selIca=null,condFilt='all',condSys='all';
+let modalType=null,modalKey=null,modalTemp={};
+
+
+// ══════════════════════════════════════════════════════
+// HARDCODED UTSWGCP COURSE LIST
+// ══════════════════════════════════════════════════════
+const SEMESTERS = {
+  'y1f':  { label:'Y1 Fall',   cls:'sem-y1f'  },
+  'y1sp': { label:'Y1 Spring', cls:'sem-y1sp' },
+  'y1su': { label:'Y1 Summer', cls:'sem-y1su' },
+  'y2f':  { label:'Y2 Fall',   cls:'sem-y2f'  },
+  'y2sp': { label:'Y2 Spring', cls:'sem-y2sp' },
+};
+
+const COURSE_LIST = [
+  // Y1 Fall
+  {sem:'y1f',  num:'GC 5201',  title:'Critical Thinking'},
+  {sem:'y1f',  num:'GC 5101',  title:'Genetic Counseling Peer Supervision'},
+  {sem:'y1f',  num:'GC 5215',  title:'Genetic Counseling Skills I'},
+  {sem:'y1f',  num:'GC 5103',  title:'Introduction to Genetic Counseling Research'},
+  {sem:'y1f',  num:'GC 5102',  title:'Introduction to Psychosocial Counseling'},
+  {sem:'y1f',  num:'GC 5213',  title:'Medical Genetics and Anatomy'},
+  {sem:'y1f',  num:'GC 5302',  title:'Reproductive Genetics and Embryology'},
+  {sem:'y1f',  num:'GC 5090',  title:'Genetic Counseling Fieldwork (Y1 Fall)'},
+  {sem:'y1f',  num:'GC 5214',  title:'Genes'},
+  {sem:'y1f',  num:'HCS 5106', title:'Professional Development (IDEAL) (Y1 Fall)'},
+  // Y1 Spring
+  {sem:'y1sp', num:'GC 5211',  title:'Cancer Genetics'},
+  {sem:'y1sp', num:'GC 5101',  title:'Genetic Counseling Peer Supervision (Y1 Spring)'},
+  {sem:'y1sp', num:'GC 5208',  title:'Genetic Counseling Skills II'},
+  {sem:'y1sp', num:'GC 5104',  title:'Genetic Counseling Research Skills'},
+  {sem:'y1sp', num:'GC 5212',  title:'Laboratory Science and Industry'},
+  {sem:'y1sp', num:'GC 5210',  title:'Medical and Adult Genetics'},
+  {sem:'y1sp', num:'GC 5202',  title:'Practice-based Learning'},
+  {sem:'y1sp', num:'GC 5205',  title:'Psychosocial Counseling Skills'},
+  {sem:'y1sp', num:'GC 5090',  title:'Genetic Counseling Fieldwork (Y1 Spring)'},
+  {sem:'y1sp', num:'CTM 5105', title:'Ethics in Clinical Research'},
+  {sem:'y1sp', num:'HCS 5106', title:'Professional Development (IDEAL) (Y1 Spring)'},
+  // Y1 Summer
+  {sem:'y1su', num:'GC 5090',  title:'Genetic Counseling Fieldwork (Y1 Summer)'},
+  // Y2 Fall
+  {sem:'y2f',  num:'GC 5203',  title:'Cutting-Edge Topics in Genetics'},
+  {sem:'y2f',  num:'GC 5101',  title:'Genetic Counseling Peer Supervision (Y2 Fall)'},
+  {sem:'y2f',  num:'GC 5209',  title:'Genetic Counseling Skills III'},
+  {sem:'y2f',  num:'GC 5105',  title:'Health Equity and ELSI in Genomic Medicine'},
+  {sem:'y2f',  num:'GC 5207',  title:'Independent Research Practicum (Y2 Fall)'},
+  {sem:'y2f',  num:'GC 5090',  title:'Genetic Counseling Fieldwork (Y2 Fall)'},
+  {sem:'y2f',  num:'GC 5080',  title:'Elective — U.S. Healthcare'},
+  {sem:'y2f',  num:'GC 5080',  title:'Elective — Public Health Genetics'},
+  // Y2 Spring
+  {sem:'y2sp', num:'GC 5101',  title:'Genetic Counseling Peer Supervision (Y2 Spring)'},
+  {sem:'y2sp', num:'GC 5207',  title:'Independent Research Practicum (Y2 Spring)'},
+  {sem:'y2sp', num:'GC 5204',  title:'Lifelong Learning in Genetics'},
+  {sem:'y2sp', num:'GC 5206',  title:'Professional Development in Practice'},
+  {sem:'y2sp', num:'GC 5090',  title:'Genetic Counseling Fieldwork (Y2 Spring)'},
+  {sem:'y2sp', num:'GC 5080',  title:'Elective — Preparation for Certification'},
+];
+
+// Build the flat course name list used throughout the app
+// Format: "GC 5201 — Critical Thinking"
+function courseDisplayName(c){ return `${c.num} — ${c.title}`; }
+
+// ══════════════════════════════════════════════════════
+// POWER AUTOMATE WEBHOOK URL
+// Paste your Power Automate HTTP trigger URL here
+// ══════════════════════════════════════════════════════
+const WEBHOOK_URL = 'https://default9d41869571ac4c31b5b2c196c8ec3c.8a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1317459d99c249bc913a00f3d040c600/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=dYUI_9h1UAwzu6U5bd4-BP0kI1YhMdPvd1NG6b5RFbA'; // ← paste your Power Automate URL here
+
+// ══════════════════════════════════════════════════════
+// SETUP — course picker + instructor name
+// ══════════════════════════════════════════════════════
+let selectedCourses = new Set();
+
+function renderCoursePicker(){
+  const el = document.getElementById('course-picker');
+  if(!el) return;
+  let html = '';
+  let lastSem = null;
+  COURSE_LIST.forEach(c => {
+    if(c.sem !== lastSem){
+      lastSem = c.sem;
+      html += `<div class="picker-sem-label">${SEMESTERS[c.sem].label}</div>`;
+    }
+    const name = courseDisplayName(c);
+    const sel = selectedCourses.has(name);
+    html += `<div class="picker-item ${sel?'selected':''}" onclick="togglePickerCourse('${name.replace(/'/g,"\'")}')">
+      <div class="picker-cb">${sel?'✓':''}</div>
+      <span class="cp-chip ${SEMESTERS[c.sem].cls}" style="padding:1px 6px;font-size:9px;border-radius:10px">${SEMESTERS[c.sem].label}</span>
+      <span class="picker-name">${name}</span>
+    </div>`;
+  });
+  el.innerHTML = html;
+  updatePickerCount();
+}
+
+function togglePickerCourse(name){
+  if(selectedCourses.has(name)) selectedCourses.delete(name);
+  else selectedCourses.add(name);
+  renderCoursePicker();
+  updateLaunchBtn();
+}
+
+function updatePickerCount(){
+  const n = selectedCourses.size;
+  const el = document.getElementById('picker-count');
+  if(el) el.textContent = n === 0 ? 'No courses selected' : `${n} course${n>1?'s':''} selected`;
+}
+
+function updateLaunchBtn(){
+  const name = (document.getElementById('instructor-name')?.value||'').trim();
+  const btn = document.getElementById('lbtn');
+  if(btn) btn.disabled = !name || selectedCourses.size === 0;
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderCoursePicker();
+  document.getElementById('instructor-name')?.addEventListener('input', updateLaunchBtn);
+});
+
+function launch(){
+  S.instructorName = document.getElementById('instructor-name').value.trim();
+  S.myCourses = [...selectedCourses];
+  S.courses = [...selectedCourses]; // only their own courses shown in the sprint
+  document.getElementById('setup').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+  if(!WEBHOOK_URL) document.getElementById('webhook-banner').style.display='flex';
+  initApp();
+}
+
+// ══════════════════════════════════════════════════════
+// SUBMIT TO POWER AUTOMATE → ONEDRIVE
+// ══════════════════════════════════════════════════════
+function openSubmitModal(){
+  const allSubs = PBC_DATA.flatMap(d=>d.subs);
+  const allIca  = ICA_DATA.flatMap(a=>a.items.map((_,i)=>({aid:a.id,i})));
+  let pbcMapped=0, icaMapped=0, condMapped=0;
+  S.myCourses.forEach(course=>{
+    allSubs.forEach(s=>{ if((S.pbc[s.id]||{})[course]) pbcMapped++; });
+    allIca.forEach(t=>{ if(getIca(t.aid,t.i)[course]) icaMapped++; });
+    CONDITIONS.forEach(c=>{ if((S.cond[c.name]||{})[course]) condMapped++; });
+  });
+  const isResubmit = S.submitVersion > 0;
+  document.getElementById('sm-title').textContent = isResubmit ? `Resubmit — ${S.instructorName}` : `Submit — ${S.instructorName}`;
+  document.getElementById('sm-desc').textContent = `Submitting responses for: ${S.myCourses.join(', ')}`;
+  document.getElementById('sm-summary').innerHTML = `
+    ${isResubmit ? `<div style="background:var(--al);border:1px solid var(--as);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--amber)">
+      ⚠ You already submitted once${S.lastSubmittedAt ? ` (at ${new Date(S.lastSubmittedAt).toLocaleTimeString()})` : ''}. Submitting again will add a new version — the facilitator will use your most recent submission (version ${S.submitVersion+1}).
+    </div>` : ''}
+    <div style="margin-bottom:5px"><strong>Instructor:</strong> ${S.instructorName}</div>
+    <div style="margin-bottom:8px"><strong>Courses:</strong> ${S.myCourses.join(', ')}</div>
+    <div style="height:1px;background:var(--border);margin:6px 0"></div>
+    <div><strong>PBC items mapped:</strong> ${pbcMapped}</div>
+    <div><strong>Content items mapped:</strong> ${icaMapped}</div>
+    <div><strong>Conditions mapped:</strong> ${condMapped}</div>
+    <div><strong>Teaching opportunities selected:</strong> ${S.courses.reduce((n,c)=>n+(S.teaching[c]?.selected?.length||0),0)}</div>
+    ${!WEBHOOK_URL ? '<div style="color:var(--amber);margin-top:8px">⚠ Webhook not yet configured — download the local backup below.</div>' : ''}
+  `;
+  document.getElementById('sm-status').textContent = '';
+  document.getElementById('sm-btn').disabled = false;
+  document.getElementById('sm-btn').textContent = isResubmit ? 'Resubmit to OneDrive →' : 'Submit to OneDrive →';
+  document.getElementById('submit-modal').classList.add('open');
+}
+
+function closeSubmitModal(){
+  document.getElementById('submit-modal').classList.remove('open');
+}
+
+async function submitResponses(){
+  const btn    = document.getElementById('sm-btn');
+  const status = document.getElementById('sm-status');
+  btn.disabled = true;
+  status.style.color = 'var(--muted)';
+  autoSave();
+
+  if(!WEBHOOK_URL){
+    status.textContent = '⚠ No webhook URL configured. Download the local backup below.';
+    status.style.color = 'var(--amber)';
+    btn.disabled = false;
+    return;
+  }
+
+  const payload = buildSubmitPayload();
+
+  // Send five requests in parallel — one per sheet
+  const sends = [
+    { sheet:'Submissions',           rows:[payload.submissionRow] },
+    { sheet:'PBC_Responses',         rows:payload.pbcRows         },
+    { sheet:'ICA_Responses',         rows:payload.icaRows         },
+    { sheet:'Conditions_Responses',  rows:payload.condRows        },
+    { sheet:'Teaching_Responses',    rows:payload.teachingRows    },
+  ];
+
+  const totalRows = sends.reduce((a,s)=>a+s.rows.length, 0);
+  status.textContent = `Sending ${totalRows} rows across 5 sheets…`;
+
+  // Power Automate's HTTP trigger does not return CORS headers. That means
+  // even when the request is received and processed successfully on
+  // Power Automate's side, the browser will still throw a "Failed to fetch"
+  // TypeError when trying to read the response — this is expected and does
+  // NOT mean the request failed. Because of this, we cannot reliably tell
+  // the difference between "blocked from reading a successful response" and
+  // "the request truly never arrived" using fetch() alone. So we send the
+  // requests and report them as sent, while being upfront that the app
+  // cannot confirm receipt — Run History / Excel is the real source of truth.
+  sends.forEach(s=>{
+    fetch(WEBHOOK_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        sheet:          s.sheet,
+        instructorName: payload.instructorName,
+        myCourses:      payload.myCourses,
+        submittedAt:    payload.submittedAt,
+        rows:           s.rows,
+      })
+    }).catch(()=>{ /* expected — browser can't read the response, ignore */ });
+  });
+
+  // Give the requests a moment to actually leave the browser before we
+  // report back, since we're not awaiting their (unreadable) responses.
+  await new Promise(r=>setTimeout(r, 800));
+
+  S.submitVersion += 1;
+  S.lastSubmittedAt = payload.submittedAt;
+  autoSave();
+
+  status.innerHTML = `✓ Sent ${totalRows} rows across 5 sheets (version ${S.submitVersion}).<br>
+    <span style="color:var(--muted)">Check with the facilitator that this appears in the Excel file.</span>`;
+  status.style.color = 'var(--green)';
+  btn.textContent = 'Sent ✓ — Resubmit if needed';
+  btn.disabled = false; // allow resubmission
+  toast(`${S.instructorName} — sent (v${S.submitVersion}) to all 5 sheets`);
+}
+
+function buildSubmitPayload(){
+  const allSubs = PBC_DATA.flatMap(d=>d.subs);
+  const allIca  = ICA_DATA.flatMap(a=>a.items.map((_,i)=>({aid:a.id,i,text:a.items[i],area:a.name})));
+  const ts      = new Date().toISOString();
+  const name    = S.instructorName;
+  const courses = S.myCourses.join(', ');
+  const version = S.submitVersion + 1; // this submission's version number
+
+  // ── Sheet 1: Submissions — one row per instructor ──
+  const submissionRow = {
+    SubmittedAt:    ts,
+    InstructorName: name,
+    SubmitVersion:  version,
+    MyCourses:      courses,
+    PBC_Mapped:     0,
+    ICA_Mapped:     0,
+    Conditions_Mapped: 0,
+  };
+
+  // ── Sheet 2: PBC_Responses — one row per instructor × sub-competency × course ──
+  const pbcRows = [];
+  allSubs.forEach(s=>{
+    const domain = PBC_DATA.find(d=>d.subs.includes(s))?.name||'';
+    S.myCourses.forEach(course=>{
+      const depth = (S.pbc[s.id]||{})[course];
+      if(depth){
+        pbcRows.push({
+          SubmittedAt:    ts,
+          InstructorName: name,
+          SubmitVersion:  version,
+          Course:         course,
+          PBC_Domain:     domain,
+          PBC_Code:       s.code,
+          PBC_SubCompetency: s.text,
+          Depth:          DEPTH[depth],
+          Notes:          S.notes['pbc_'+s.id]||'',
+        });
+      }
+    });
+  });
+
+  // ── Sheet 3: ICA_Responses — one row per instructor × content item × course ──
+  const icaRows = [];
+  allIca.forEach(t=>{
+    S.myCourses.forEach(course=>{
+      const depth = getIca(t.aid,t.i)[course];
+      if(depth){
+        icaRows.push({
+          SubmittedAt:    ts,
+          InstructorName: name,
+          SubmitVersion:  version,
+          Course:         course,
+          Content_Area:   t.area,
+          Content_Ref:    `${t.aid}.${t.i+1}`,
+          Content_Item:   t.text,
+          Depth:          DEPTH[depth],
+        });
+      }
+    });
+  });
+
+  // ── Sheet 4: Conditions_Responses — one row per instructor × condition × course ──
+  const condRows = [];
+  CONDITIONS.forEach(c=>{
+    S.myCourses.forEach(course=>{
+      const depth = (S.cond[c.name]||{})[course];
+      if(depth){
+        condRows.push({
+          SubmittedAt:    ts,
+          InstructorName: name,
+          SubmitVersion:  version,
+          Course:         course,
+          Condition_Num:  c.n,
+          System:         c.sys,
+          Condition:      c.name,
+          Depth:          DEPTH[depth],
+          Notes:          S.notes['cond_'+c.name]||'',
+        });
+      }
+    });
+  });
+
+  // Build teaching rows
+  const teachingRows = teachingRowsForSubmit(ts, name, version);
+
+  // Update summary counts
+  submissionRow.PBC_Mapped        = pbcRows.length;
+  submissionRow.ICA_Mapped        = icaRows.length;
+  submissionRow.Conditions_Mapped = condRows.length;
+  submissionRow.Teaching_Mapped   = teachingRows.length;
+
+  return {
+    submittedAt:    ts,
+    instructorName: name,
+    myCourses:      S.myCourses,
+    // Flat row arrays — each maps directly to one Excel sheet
+    submissionRow,
+    pbcRows,
+    icaRows,
+    condRows,
+    teachingRows,
+  };
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// TEACHING OPPORTUNITIES
+// ══════════════════════════════════════════════════════
+const TEACHING_OPTIONS = [
+  { id:'peers',       label:'Presentation(s) Teaching Peers',                  desc:'Teaching each other, first years/second years' },
+  { id:'students',    label:'Presentation(s) Teaching Students',               desc:'High school, college, other healthcare professions' },
+  { id:'hcp',         label:'Presentation(s) Teaching Healthcare Professionals', desc:'GCs, physicians, nurses, APPs, etc.' },
+  { id:'community',   label:'Presentation(s) Teaching the Community / Public Education', desc:'' },
+  { id:'resources',   label:'Educational Resource Development',                desc:'Fact sheets, brochures, etc.' },
+  { id:'professional',label:'Professional Education Projects',                  desc:'Conference posters, abstract submissions, etc.' },
+  { id:'other',       label:'Other',                                            desc:'', hasText:true },
+];
+
+function initTeaching(){
+  // Ensure state exists for each course
+  S.courses.forEach(c=>{
+    if(!S.teaching[c]) S.teaching[c] = { selected:[], otherText:'' };
+  });
+  renderTeaching();
+}
+
+function renderTeaching(){
+  const el = document.getElementById('tch-course-sections');
+  if(!el) return;
+  el.innerHTML = S.courses.map(course=>{
+    const state = S.teaching[course] || { selected:[], otherText:'' };
+    const count = state.selected.length;
+    const sc = semCls(course);
+    const sl = semLabel(course);
+    const optionsHtml = TEACHING_OPTIONS.map(opt=>{
+      const sel = state.selected.includes(opt.id);
+      const isOther = opt.id === 'other';
+      return `<div class="tch-option ${sel?'selected':''}" onclick="toggleTeaching('${course.replace(/'/g,"\\'")}','${opt.id}')">
+        <div class="tch-cb">${sel?'✓':''}</div>
+        <div class="tch-option-text">
+          <strong>${opt.label}</strong>${opt.desc?` <span style="color:var(--muted);font-weight:400">— ${opt.desc}</span>`:''}
+        </div>
+      </div>
+      ${isOther && sel ? `<div class="tch-other-wrap">
+        <textarea class="tch-other-input"
+          placeholder="Please describe any additional teaching opportunities…"
+          onchange="saveTeachingOther('${course.replace(/'/g,"\\'")}', this.value)"
+        >${state.otherText||''}</textarea>
+      </div>` : ''}`;
+    }).join('');
+
+    return `<div class="tch-course-section">
+      <div class="tch-course-header ${count>0?'has-selections':''}">
+        <span class="cp-chip ${sc}" style="padding:2px 8px;font-size:10px;border-radius:10px">${sl}</span>
+        <span class="tch-course-name">${course}</span>
+        <span class="tch-checked-count">${count>0?`${count} selected`:'none selected'}</span>
+      </div>
+      <div class="tch-options">${optionsHtml}</div>
+    </div>`;
+  }).join('');
+  updateTeachingBadge();
+}
+
+function toggleTeaching(course, optId){
+  if(!S.teaching[course]) S.teaching[course] = { selected:[], otherText:'' };
+  const sel = S.teaching[course].selected;
+  const idx = sel.indexOf(optId);
+  if(idx > -1) sel.splice(idx,1);
+  else sel.push(optId);
+  renderTeaching();
+  refreshDash();
+}
+
+function saveTeachingOther(course, val){
+  if(!S.teaching[course]) S.teaching[course] = { selected:[], otherText:'' };
+  S.teaching[course].otherText = val;
+  autoSave();
+}
+
+function updateTeachingBadge(){
+  const total = S.courses.reduce((n,c)=>{
+    return n + ((S.teaching[c]?.selected?.length||0) > 0 ? 1 : 0);
+  },0);
+  const el = document.getElementById('tbtch');
+  if(el) el.textContent = total > 0 ? `${total}/${S.courses.length}` : '—';
+}
+
+function teachingRowsForSubmit(ts, name, version){
+  const rows = [];
+  S.courses.forEach(course=>{
+    const state = S.teaching[course];
+    if(!state || state.selected.length === 0) return;
+    TEACHING_OPTIONS.forEach(opt=>{
+      if(state.selected.includes(opt.id)){
+        rows.push({
+          SubmittedAt:    ts,
+          InstructorName: name,
+          SubmitVersion:  version,
+          Course:         course,
+          Opportunity:    opt.label,
+          OtherText:      opt.id === 'other' ? (state.otherText||'') : '',
+        });
+      }
+    });
+  });
+  return rows;
+}
+
+function initApp(){
+  const el = document.getElementById('hinstructor');
+  if(el) el.textContent = S.instructorName || '—';
+  renderPbcSb();renderIcaSb();renderBingo();buildSysFilter();initTeaching();refreshDash();
+}
+
+// TABS
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+  if(name==='export'){renderExport();}
+  if(name==='teaching'){renderTeaching();}
+}
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+function cov(obj){return Object.values(obj||{}).filter(d=>d>0).length;}
+function hasCov(obj){return cov(obj)>0;}
+function getIca(aid,idx){return (S.ica[aid]||{})[idx]||{};}
+
+// ══════════════════════════════════════════════════════
+// PBC
+// ══════════════════════════════════════════════════════
+function renderPbcSb(){
+  document.getElementById('pbc-sb').innerHTML=PBC_DATA.map(d=>{
+    const c=d.subs.filter(s=>hasCov(S.pbc[s.id]||{})).length;
+    const pct=Math.round(c/d.subs.length*100);
+    return `<div class="si ${selPbc===d.id?'active':''}" onclick="selPbcDom(${d.id})">
+      <span class="si-name">${d.code}. ${d.name}</span>
+      <div class="sip"><div class="sipb"><div class="sipf" style="width:${pct}%"></div></div><span class="sipt">${c}/${d.subs.length}</span></div>
+    </div>`;
+  }).join('');
+}
+function selPbcDom(id){
+  selPbc=id;renderPbcSb();
+  const d=PBC_DATA.find(x=>x.id===id);
+  document.getElementById('pbc-mm').innerHTML=`
+    <div class="mmt">${d.code}. ${d.name}</div>
+    <div class="mms">${d.summary}</div>
+    <div class="dk">
+      <span class="dc2"><span class="dd" style="background:#2da868"></span>Primary — core focus</span>
+      <span class="dc2"><span class="dd" style="background:#3b82f6"></span>Secondary — meaningfully addressed</span>
+    </div>
+    ${d.subs.map(s=>renderSubCard('pbc',s.id,s.code,s.text,S.pbc[s.id]||{},'pbc_'+s.id)).join('')}`;
+}
+// ── Semester color helper ──
+function semCls(courseName){
+  const c = COURSE_LIST.find(x=>courseDisplayName(x)===courseName);
+  return c ? SEMESTERS[c.sem].cls : '';
+}
+function semLabel(courseName){
+  const c = COURSE_LIST.find(x=>courseDisplayName(x)===courseName);
+  return c ? SEMESTERS[c.sem].label : '';
+}
+
+function renderSubCard(type,key,code,text,covObj,noteKey){
+  const count=cov(covObj);
+  const cls=count>=S.courses.length?'fc':count>0?'hc':'';
+  const cid=`ic-${type}-${key.replace(/\./g,'-')}`;
+  const coursesHtml=S.courses.map(c=>{
+    const d=covObj[c]||0;
+    const sc=semCls(c);
+    const sl=semLabel(c);
+    return `<div class="cgi ${d?DCLS[d]:''}" onclick="cycleDepth('${type}','${key}','${c.replace(/'/g,"\\'")}')">
+      <div class="cgi-top">
+        <div class="cgck">${d?'✓':''}</div>
+        <div class="cgn">${c}</div>
+      </div>
+      <div class="cgd" style="display:flex;align-items:center;gap:4px">
+        <span class="cp-chip ${sc}" style="padding:1px 6px;font-size:9px;border-radius:10px">${sl}</span>
+        <span>${d?DEPTH[d]:'click to set'}</span>
+      </div>
+    </div>`;
+  }).join('');
+  const nv=S.notes[noteKey]||'';
+  return `<div class="icard ${cls}" id="${cid}">
+    <div class="ich" onclick="toggleCard('${cid}')">
+      <span class="icb">${code}</span>
+      <span class="ict">${text}</span>
+      <span class="icn">${count>0?`${count} course${count>1?'s':''}`:'uncovered'}</span>
+      <span class="icx">▼</span>
+    </div>
+    <div class="icbody">
+      <div class="ci">Click a course to cycle through coverage depths. Multiple courses covering this item builds curriculum resilience.</div>
+      <div class="cgl">${coursesHtml}</div>
+      <div class="nl">Notes</div>
+      <textarea class="ni" placeholder="Discussion notes…" onchange="S.notes['${noteKey}']=this.value">${nv}</textarea>
+    </div>
+  </div>`;
+}
+function toggleCard(id){document.getElementById(id)?.classList.toggle('open');}
+function cycleDepth(type,key,course){
+  if(type==='pbc'){
+    if(!S.pbc[key])S.pbc[key]={};
+    const c=S.pbc[key][course]||0;
+    S.pbc[key][course]=c>=2?0:c+1;
+    const d=PBC_DATA.find(x=>x.subs.some(s=>s.id===key));
+    const sub=d?.subs.find(s=>s.id===key);
+    if(sub)replaceCard('pbc',key,sub.code,sub.text,S.pbc[key],'pbc_'+key);
+    renderPbcSb();
+  } else if(type==='ica'){
+    const [aid,sidx]=key.split('__');const idx=parseInt(sidx);
+    if(!S.ica[aid])S.ica[aid]={};
+    if(!S.ica[aid][idx])S.ica[aid][idx]={};
+    const c=S.ica[aid][idx][course]||0;
+    S.ica[aid][idx][course]=c>=2?0:c+1;
+    const area=ICA_DATA.find(a=>a.id===aid);
+    if(area)replaceCard('ica',key,`${aid}.${idx+1}`,area.items[idx],S.ica[aid][idx],`ica_${aid}_${idx}`);
+    renderIcaSb();
+  }
+  refreshDash();
+}
+function replaceCard(type,key,code,text,covObj,noteKey){
+  const cid=`ic-${type}-${key.replace(/\./g,'-')}`;
+  const old=document.getElementById(cid);
+  if(!old)return;
+  const wasOpen=old.classList.contains('open');
+  const tmp=document.createElement('div');
+  tmp.innerHTML=renderSubCard(type,key,code,text,covObj,noteKey);
+  const fresh=tmp.firstElementChild;
+  if(wasOpen)fresh.classList.add('open');
+  old.replaceWith(fresh);
+}
+
+// ══════════════════════════════════════════════════════
+// INSTRUCTIONAL CONTENT AREAS
+// ══════════════════════════════════════════════════════
+function renderIcaSb(){
+  document.getElementById('ica-sb').innerHTML=ICA_DATA.map(a=>{
+    const covered=a.items.filter((_,i)=>hasCov(getIca(a.id,i))).length;
+    const pct=Math.round(covered/a.items.length*100);
+    return `<div class="si ${selIca===a.id?'active':''}" onclick="selIcaArea('${a.id}')">
+      <span class="si-name">${a.id}: ${a.name}</span>
+      <div class="sip"><div class="sipb"><div class="sipf" style="width:${pct}%"></div></div><span class="sipt">${covered}/${a.items.length}</span></div>
+    </div>`;
+  }).join('');
+}
+function selIcaArea(id){
+  selIca=id;renderIcaSb();
+  const a=ICA_DATA.find(x=>x.id===id);
+  document.getElementById('ica-mm').innerHTML=`
+    <div class="mmt">${a.id}: ${a.name}</div>
+    ${''/* note removed */}
+    <div class="dk">
+      <span class="dc2"><span class="dd" style="background:#2da868"></span>Primary</span>
+      <span class="dc2"><span class="dd" style="background:#3b82f6"></span>Secondary</span>
+    </div>
+    ${a.items.map((item,idx)=>{
+      const key=`${a.id}__${idx}`;
+      return renderSubCard('ica',key,`${a.id}.${idx+1}`,item,getIca(a.id,idx),`ica_${a.id}_${idx}`);
+    }).join('')}`;
+}
+
+// ══════════════════════════════════════════════════════
+// CONDITIONS BINGO
+// ══════════════════════════════════════════════════════
+function buildSysFilter(){
+  const systems=[...new Set(CONDITIONS.map(c=>c.sys))].sort();
+  document.getElementById('sys-filter').innerHTML=
+    `<button class="syschip active" onclick="setSys('all',this)">All systems</button>`+
+    systems.map(s=>`<button class="syschip" onclick="setSys('${s}',this)">${s}</button>`).join('');
+}
+function setSys(s,btn){
+  condSys=s;
+  document.querySelectorAll('.syschip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');renderBingo();
+}
+function setFilt(f,btn){
+  condFilt=f;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');renderBingo();
+}
+function renderBingo(){
+  const search=(document.getElementById('csearch').value||'').toLowerCase();
+  let items=CONDITIONS.filter(c=>{
+    if(search&&!c.name.toLowerCase().includes(search))return false;
+    if(condSys!=='all'&&c.sys!==condSys)return false;
+    const n=cov(S.cond[c.name]||{});
+    if(condFilt==='covered')return n>0;
+    if(condFilt==='gap')return n===0;
+    if(condFilt==='rich')return n>=3;
+    return true;
+  });
+  const total=135;
+  const covC=CONDITIONS.filter(c=>cov(S.cond[c.name]||{})>0).length;
+  const richC=CONDITIONS.filter(c=>cov(S.cond[c.name]||{})>=3).length;
+  document.getElementById('bscov').textContent=covC;
+  document.getElementById('bsgap').textContent=total-covC;
+  document.getElementById('bsrich').textContent=richC;
+  document.getElementById('bgrid').innerHTML=items.map(c=>{
+    const n=cov(S.cond[c.name]||{});
+    const cls=n===0?'unc':n===1?'c1':n>=3?'crich':'c2';
+    return `<div class="ccard ${cls}" onclick="openCondModal('${c.name.replace(/'/g,"\\'")}','${c.sys}')">
+      <div class="csys">${c.sys}</div>
+      <div class="cname">${c.name}</div>
+      <div class="ccov">${n>0?`✓ ${n} course${n>1?'s':''}`:'not yet covered'}</div>
+    </div>`;
+  }).join('');
+}
+function drawWild(){
+  const gaps=CONDITIONS.filter(c=>cov(S.cond[c.name]||{})===0);
+  if(!gaps.length){toast('🎉 All 135 conditions are covered!');return;}
+  const pick=gaps[Math.floor(Math.random()*gaps.length)];
+  toast(`🎲 Wildcard: "${pick.name}" — does any course cover this?`,'amber',5000);
+  document.querySelectorAll('.ccard').forEach(el=>{
+    if(el.querySelector('.cname')?.textContent===pick.name){
+      el.scrollIntoView({behavior:'smooth',block:'center'});
+      el.style.outline='2.5px solid var(--as)';el.style.transform='scale(1.04)';
+      setTimeout(()=>{el.style.outline='';el.style.transform='';},3000);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// CONDITION MODAL
+// ══════════════════════════════════════════════════════
+function openCondModal(name,sys){
+  modalType='condition';modalKey=name;
+  modalTemp={...(S.cond[name]||{})};
+  document.getElementById('mey').textContent=sys+' · Condition #'+(CONDITIONS.find(c=>c.name===name)?.n||'');
+  document.getElementById('mtitle').textContent=name;
+  document.getElementById('mdesc').textContent='Which courses cover this condition, and how deeply?';
+  renderModalCourses();
+  document.getElementById('mnotes').value=S.notes['cond_'+name]||'';
+  document.getElementById('modal').classList.add('open');
+}
+function renderModalCourses(){
+  document.getElementById('mcg').innerHTML=S.courses.map(c=>{
+    const d=modalTemp[c]||0;
+    const sc=semCls(c);
+    const sl=semLabel(c);
+    return `<div class="mcc ${d?'s'+d:''}">
+      <div class="mcn">
+        <span class="cp-chip ${sc}" style="padding:1px 6px;font-size:9px;border-radius:10px;margin-right:4px">${sl}</span>${c}
+      </div>
+      <div class="mcd">
+        <button class="dbt d1 ${d===1?'a':''}" onclick="setMD('${c.replace(/'/g,"\\'")}',1)">Primary</button>
+        <button class="dbt d2 ${d===2?'a':''}" onclick="setMD('${c.replace(/'/g,"\\'")}',2)">Secondary</button>
+        ${d>0?`<button class="dbt" onclick="setMD('${c.replace(/'/g,"\\'")}',0)" style="color:var(--muted)">✕</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function setMD(course,depth){
+  modalTemp[course]=(modalTemp[course]===depth)?0:depth;
+  renderModalCourses();
+}
+function saveModal(){
+  if(modalType==='condition'){
+    S.cond[modalKey]={...modalTemp};
+    S.notes['cond_'+modalKey]=document.getElementById('mnotes').value;
+    renderBingo();
+  }
+  refreshDash();closeModal();
+  const n=cov(modalTemp);
+  if(n>0)toast(`Saved — ${n} course${n>1?'s':''} mapped ✓`);
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');modalType=null;modalKey=null;modalTemp={};}
+
+// ══════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════
+function refreshDash(){
+  const allSubs=PBC_DATA.flatMap(d=>d.subs);
+  const pbcCov=allSubs.filter(s=>hasCov(S.pbc[s.id]||{})).length;
+  document.getElementById('dpbc').textContent=pbcCov;
+  document.getElementById('ppbc').style.width=Math.round(pbcCov/25*100)+'%';
+  document.getElementById('hpbc').textContent=`${pbcCov}/25`;
+  document.getElementById('tbpbc').textContent=`${pbcCov}/25`;
+
+  const allIca=ICA_DATA.flatMap(a=>a.items.map((_,i)=>({aid:a.id,i})));
+  const icaCov=allIca.filter(t=>hasCov(getIca(t.aid,t.i))).length;
+  const icaTotal=allIca.length;
+  document.getElementById('dica').textContent=icaCov;
+  document.getElementById('dica-total').textContent=icaTotal;
+  document.getElementById('pica').style.width=Math.round(icaCov/icaTotal*100)+'%';
+  document.getElementById('hica').textContent=`${ICA_DATA.filter(a=>a.items.some((_,i)=>hasCov(getIca(a.id,i)))).length}/9`;
+  document.getElementById('tbica').textContent=`${ICA_DATA.filter(a=>a.items.some((_,i)=>hasCov(getIca(a.id,i)))).length}/9`;
+
+  const condCov=CONDITIONS.filter(c=>hasCov(S.cond[c.name]||{})).length;
+  document.getElementById('dcond').textContent=condCov;
+  document.getElementById('pcond').style.width=Math.round(condCov/135*100)+'%';
+  document.getElementById('hcond').textContent=`${condCov}/135`;
+  document.getElementById('tbcond').textContent=`${condCov}/135`;
+
+  const totalItems=25+icaTotal+135;
+  const totalCov=pbcCov+icaCov+condCov;
+  const pct=Math.round(totalCov/totalItems*100);
+  document.getElementById('ocfill').style.width=pct+'%';
+  document.getElementById('ocpct').textContent=pct+'%';
+
+  // Course contributions
+  const contribs=S.courses.map(c=>{
+    let n=0;
+    allSubs.forEach(s=>{if((S.pbc[s.id]||{})[c]>0)n++;});
+    allIca.forEach(t=>{if((getIca(t.aid,t.i))[c]>0)n++;});
+    CONDITIONS.forEach(cn=>{if((S.cond[cn.name]||{})[c]>0)n++;});
+    return {c,n};
+  }).sort((a,b)=>b.n-a.n);
+  const maxC=Math.max(1,...contribs.map(x=>x.n));
+  document.getElementById('cc-list').innerHTML=contribs.length?
+    contribs.map(({c,n})=>`<div class="cc-row"><span class="cp-chip ${semCls(c)} cc-name" style="padding:2px 7px;font-size:11px;border-radius:10px" title="${c}">${c}</span><div class="cc-bar"><div class="cc-fill" style="width:${Math.round(n/maxC*100)}%"></div></div><span class="cc-n">${n}</span></div>`).join('')
+    :'<div style="color:var(--muted);font-size:12px">No data yet</div>';
+
+  // Redundancy
+  const pbcR=allSubs.map(s=>cov(S.pbc[s.id]||{}));
+  const condR=CONDITIONS.map(c=>cov(S.cond[c.name]||{}));
+  const icaR=allIca.map(t=>cov(getIca(t.aid,t.i)));
+  const avgPbc=pbcR.reduce((a,b)=>a+b,0)/25;
+  const solePbc=pbcR.filter(x=>x===1).length;
+  const richCond=condR.filter(x=>x>=3).length;
+  const avgCond=condR.filter(x=>x>0).length?condR.reduce((a,b)=>a+b,0)/condR.filter(x=>x>0).length:0;
+  document.getElementById('rr-list').innerHTML=`
+    <div class="rr"><span class="rl">Avg courses per PBC sub-competency</span><span class="rv ${avgPbc>=2?'g':avgPbc>=1?'ok':'w'}">${avgPbc.toFixed(1)}</span></div>
+    <div class="rr"><span class="rl">PBC sub-comps with sole coverage</span><span class="rv ${solePbc===0?'g':solePbc<5?'ok':'w'}">${solePbc}</span></div>
+    <div class="rr"><span class="rl">Conditions covered by 3+ courses</span><span class="rv ${richCond>15?'g':richCond>5?'ok':'w'}">${richCond}</span></div>
+    <div class="rr"><span class="rl">Avg courses per covered condition</span><span class="rv ${avgCond>=2?'g':avgCond>=1?'ok':'w'}">${avgCond.toFixed(1)}</span></div>`;
+
+  // Gaps
+  const pbcGaps=allSubs.filter(s=>!hasCov(S.pbc[s.id]||{}));
+  const condGaps=CONDITIONS.filter(c=>!hasCov(S.cond[c.name]||{}));
+  const icaGaps=allIca.filter(t=>!hasCov(getIca(t.aid,t.i)));
+  let g='';
+  if(pbcGaps.length)g+=`<div style="margin-bottom:9px"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">PBC sub-competencies (${pbcGaps.length})</div>${pbcGaps.map(s=>`<span class="gpill">${s.code}</span>`).join('')}</div>`;
+  if(icaGaps.length)g+=`<div style="margin-bottom:9px"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Instructional content items (${icaGaps.length} of ${icaTotal})</div><span style="font-size:11px;color:var(--muted)">${icaGaps.length} items across ${ICA_DATA.filter(a=>a.items.some((_,i)=>!hasCov(getIca(a.id,i)))).length} content areas</span></div>`;
+  if(condGaps.length)g+=`<div><div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Conditions uncovered (${condGaps.length})</div>${condGaps.slice(0,18).map(c=>`<span class="gpill">${c.name.length>30?c.name.slice(0,28)+'…':c.name}</span>`).join('')}${condGaps.length>18?`<span class="gpill">+${condGaps.length-18} more</span>`:''}</div>`;
+  document.getElementById('gap-content').innerHTML=g||'<span style="color:var(--green);font-weight:500">🎉 Everything is covered — remarkable!</span>';
+}
+
+// ══════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════
+function renderExport(){
+  const allSubs=PBC_DATA.flatMap(d=>d.subs);
+  // PBC
+  let p=`<div style="overflow-x:auto"><table><thead><tr><th>Code</th><th>Sub-competency</th><th>Domain</th>${S.courses.map(c=>`<th>${c}</th>`).join('')}<th>Count</th><th>Notes</th></tr></thead><tbody>`;
+  PBC_DATA.forEach(d=>d.subs.forEach(s=>{
+    const cv=S.pbc[s.id]||{};const n=cov(cv);
+    p+=`<tr><td style="font-family:var(--mono)">${s.code}</td><td>${s.text}</td><td>${d.name}</td>${S.courses.map(c=>`<td style="text-align:center;color:${cv[c]?DDOT[cv[c]]:'var(--dim)'}">${cv[c]?DEPTH[cv[c]][0]:'—'}</td>`).join('')}<td style="font-family:var(--mono);text-align:center">${n}</td><td style="font-size:10px;color:var(--muted)">${S.notes['pbc_'+s.id]||''}</td></tr>`;
+  }));
+  p+='</tbody></table></div>';
+  document.getElementById('exp-pbc').innerHTML=p;
+
+  // ICA
+  let ica=`<div style="overflow-x:auto"><table><thead><tr><th>Ref</th><th>Item</th><th>Area</th>${S.courses.map(c=>`<th>${c}</th>`).join('')}<th>Count</th></tr></thead><tbody>`;
+  ICA_DATA.forEach(a=>a.items.forEach((item,idx)=>{
+    const cv=getIca(a.id,idx);const n=cov(cv);
+    ica+=`<tr><td style="font-family:var(--mono)">${a.id}.${idx+1}</td><td>${item}</td><td>${a.name}</td>${S.courses.map(c=>`<td style="text-align:center;color:${cv[c]?DDOT[cv[c]]:'var(--dim)'}">${cv[c]?DEPTH[cv[c]][0]:'—'}</td>`).join('')}<td style="font-family:var(--mono);text-align:center">${n}</td></tr>`;
+  }));
+  ica+='</tbody></table></div>';
+  document.getElementById('exp-ica').innerHTML=ica;
+
+  // Conditions
+  let co=`<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>System</th><th>Condition</th>${S.courses.map(c=>`<th>${c}</th>`).join('')}<th>Count</th><th>Status</th><th>Notes</th></tr></thead><tbody>`;
+  CONDITIONS.forEach(c=>{
+    const cv=S.cond[c.name]||{};const n=cov(cv);
+    co+=`<tr><td style="font-family:var(--mono)">${c.n}</td><td>${c.sys}</td><td>${c.name}</td>${S.courses.map(course=>`<td style="text-align:center;color:${cv[course]?DDOT[cv[course]]:'var(--dim)'}">${cv[course]?DEPTH[cv[course]][0]:'—'}</td>`).join('')}<td style="font-family:var(--mono);text-align:center">${n}</td><td style="color:${n>=3?'var(--green)':n>0?'var(--blue)':'var(--red)'}">${n>=3?'Well-covered':n>0?'Covered':'Gap'}</td><td style="font-size:10px;color:var(--muted)">${S.notes['cond_'+c.name]||''}</td></tr>`;
+  });
+  co+='</tbody></table></div>';
+  document.getElementById('exp-cond').innerHTML=co;
+}
+
+function dlCSV(type){
+  let csv='';
+  if(type==='pbc'){
+    csv='Code,Sub-competency,Domain,'+S.courses.join(',')+'Count,Notes\n';
+    PBC_DATA.forEach(d=>d.subs.forEach(s=>{
+      const cv=S.pbc[s.id]||{};
+      csv+=`${s.code},"${s.text}",${d.name},`+S.courses.map(c=>cv[c]?DEPTH[cv[c]]:'').join(',')+`,${cov(cv)},"${S.notes['pbc_'+s.id]||''}"\n`;
+    }));
+  } else if(type==='ica'){
+    csv='Ref,Item,Area,'+S.courses.join(',')+',Count\n';
+    ICA_DATA.forEach(a=>a.items.forEach((item,idx)=>{
+      const cv=getIca(a.id,idx);
+      csv+=`${a.id}.${idx+1},"${item}","${a.name}",`+S.courses.map(c=>cv[c]?DEPTH[cv[c]]:'').join(',')+`,${cov(cv)}\n`;
+    }));
+  } else {
+    csv='#,System,Condition,'+S.courses.join(',')+'Count,Status,Notes\n';
+    CONDITIONS.forEach(c=>{
+      const cv=S.cond[c.name]||{};const n=cov(cv);
+      csv+=`${c.n},${c.sys},"${c.name}",`+S.courses.map(course=>cv[course]?DEPTH[cv[course]]:'').join(',')+`,${n},${n>=3?'Well-covered':n>0?'Covered':'Gap'},"${S.notes['cond_'+c.name]||''}"\n`;
+    });
+  }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`mapping-across-curriculum-${type}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();toast('Downloaded ✓');
+}
+
+function dlJSON(){
+  const data={retreatName:S.retreatName,exportDate:new Date().toISOString(),courses:S.courses,pbc:S.pbc,ica:S.ica,conditions:S.cond,notes:S.notes,
+    summary:{pbcCovered:PBC_DATA.flatMap(d=>d.subs).filter(s=>hasCov(S.pbc[s.id]||{})).length,conditionsCovered:CONDITIONS.filter(c=>hasCov(S.cond[c.name]||{})).length}};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download=`mapping-across-curriculum-full-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();toast('JSON downloaded ✓');
+}
+
+// ══════════════════════════════════════════════════════
+// EXCEL EXPORT (SheetJS)
+// ══════════════════════════════════════════════════════
+
+function xlFill(depth){
+  if(depth==='Primary')   return {fgColor:{rgb:'B0DFC5'}};
+  if(depth==='Secondary') return {fgColor:{rgb:'B8D4F0'}};
+  return {fgColor:{rgb:'F8D7DA'}};
+}
+function xlFont(depth){
+  if(depth==='Primary')   return {color:{rgb:'1A7A4A'},bold:false};
+  if(depth==='Secondary') return {color:{rgb:'1A4F8A'},bold:false};
+  return {color:{rgb:'721C24'},bold:false};
+}
+function xlHdr(){return {fill:{fgColor:{rgb:'1A7A4A'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'}};}
+
+function applyStyle(ws, addr, style){
+  if(!ws[addr]) ws[addr]={t:'s',v:''};
+  ws[addr].s = style;
+}
+
+function dlExcel(){
+  if(typeof XLSX === 'undefined'){ toast('Excel library still loading — try again in a moment','amber'); return; }
+  toast('Building Excel workbook…','blue');
+  try{
+    const wb = XLSX.utils.book_new();
+    const allSubs = PBC_DATA.flatMap(d=>d.subs);
+    const allIca  = ICA_DATA.flatMap(a=>a.items.map((_,i)=>({aid:a.id,i,text:a.items[i],area:a.name})));
+
+    // ── SUMMARY sheet ──
+    const pbcCov  = allSubs.filter(s=>hasCov(S.pbc[s.id]||{})).length;
+    const icaCov  = allIca.filter(t=>hasCov(getIca(t.aid,t.i))).length;
+    const condCov = CONDITIONS.filter(c=>hasCov(S.cond[c.name]||{})).length;
+    const total   = 25 + allIca.length + 135;
+    const covered = pbcCov + icaCov + condCov;
+
+    const summaryData = [
+      ['Mapping Across the Curriculum — Session Summary'],
+      [],
+      ['Retreat name', S.retreatName],
+      ['Exported', new Date().toLocaleString()],
+      ['Courses', S.courses.join(', ')],
+      [],
+      ['COVERAGE SUMMARY','Covered','Total','%'],
+      ['Practice-Based Competencies', pbcCov, 25, Math.round(pbcCov/25*100)+'%'],
+      ['Instructional Content items', icaCov, allIca.length, Math.round(icaCov/allIca.length*100)+'%'],
+      ['Genetic Conditions', condCov, 135, Math.round(condCov/135*100)+'%'],
+      ['Overall', covered, total, Math.round(covered/total*100)+'%'],
+      [],
+      ['REDUNDANCY HEALTH',''],
+      ['PBC items with sole coverage (fragility risk)', allSubs.filter(s=>cov(S.pbc[s.id]||{})===1).length],
+      ['PBC items with 3+ course coverage', allSubs.filter(s=>cov(S.pbc[s.id]||{})>=3).length],
+      ['Conditions covered by 3+ courses', CONDITIONS.filter(c=>cov(S.cond[c.name]||{})>=3).length],
+      ['Conditions with sole coverage', CONDITIONS.filter(c=>cov(S.cond[c.name]||{})===1).length],
+      [],
+      ['DEPTH KEY',''],
+      ['Primary','Core focus — explicitly taught and assessed'],
+      ['Secondary','Meaningfully addressed but not central focus'],
+    ];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary['!cols'] = [{wch:42},{wch:14},{wch:10},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+    // ── PBC sheet ──
+    const pbcHeader = ['Code','Sub-competency','Domain',...S.courses,'# Covered','Notes'];
+    const pbcRows = PBC_DATA.flatMap(d=>d.subs.map(s=>{
+      const cv=S.pbc[s.id]||{};
+      return [s.code, s.text, d.name, ...S.courses.map(c=>cv[c]?DEPTH[cv[c]]:''), cov(cv), S.notes['pbc_'+s.id]||''];
+    }));
+    const wsPbc = XLSX.utils.aoa_to_sheet([pbcHeader,...pbcRows]);
+    wsPbc['!cols'] = [{wch:8},{wch:52},{wch:28},...S.courses.map(()=>({wch:14})),{wch:10},{wch:30}];
+    styleXlSheet(wsPbc, pbcHeader, pbcRows, 3, S.courses.length);
+    XLSX.utils.book_append_sheet(wb, wsPbc, 'PBC');
+
+    // ── INSTRUCTIONAL CONTENT sheet ──
+    const icaHeader = ['Ref','Item','Content Area',...S.courses,'# Covered'];
+    const icaRows = allIca.map(t=>{
+      const cv=getIca(t.aid,t.i);
+      return [t.aid+'.'+(t.i+1), t.text, t.area, ...S.courses.map(c=>cv[c]?DEPTH[cv[c]]:''), cov(cv)];
+    });
+    const wsIca = XLSX.utils.aoa_to_sheet([icaHeader,...icaRows]);
+    wsIca['!cols'] = [{wch:8},{wch:55},{wch:30},...S.courses.map(()=>({wch:14})),{wch:10}];
+    styleXlSheet(wsIca, icaHeader, icaRows, 3, S.courses.length);
+    XLSX.utils.book_append_sheet(wb, wsIca, 'Instructional Content');
+
+    // ── CONDITIONS sheet ──
+    const condHeader = ['#','System','Condition',...S.courses,'# Covered','Status','Notes'];
+    const condRows = CONDITIONS.map(c=>{
+      const cv=S.cond[c.name]||{};const n=cov(cv);
+      return [c.n, c.sys, c.name, ...S.courses.map(course=>cv[course]?DEPTH[cv[course]]:''), n,
+        n>=3?'Well-covered':n>0?'Covered':'Gap', S.notes['cond_'+c.name]||''];
+    });
+    const wsCond = XLSX.utils.aoa_to_sheet([condHeader,...condRows]);
+    wsCond['!cols'] = [{wch:5},{wch:18},{wch:38},...S.courses.map(()=>({wch:14})),{wch:10},{wch:14},{wch:30}];
+    styleXlSheet(wsCond, condHeader, condRows, 3, S.courses.length);
+    // Color Status column
+    const statusColIdx = 3 + S.courses.length + 1; // 0-indexed
+    condRows.forEach((row,ri)=>{
+      const addr = XLSX.utils.encode_cell({r:ri+1, c:statusColIdx});
+      const val = row[statusColIdx];
+      if(!wsCond[addr]) wsCond[addr]={t:'s',v:val||''};
+      if(val==='Well-covered') wsCond[addr].s={fill:{fgColor:{rgb:'D4EDDA'}},font:{color:{rgb:'155724'}}};
+      else if(val==='Covered') wsCond[addr].s={fill:{fgColor:{rgb:'CCE5FF'}},font:{color:{rgb:'004085'}}};
+      else if(val==='Gap')     wsCond[addr].s={fill:{fgColor:{rgb:'F8D7DA'}},font:{color:{rgb:'721C24'}}};
+    });
+    XLSX.utils.book_append_sheet(wb, wsCond, 'Conditions');
+
+    // Save
+    const fname = (S.retreatName||'mapping-across-curriculum').replace(/[^a-z0-9]/gi,'-').toLowerCase();
+    XLSX.writeFile(wb, `${fname}-${new Date().toISOString().slice(0,10)}.xlsx`);
+    toast('Excel workbook downloaded ✓');
+  }catch(e){
+    toast('Export failed: '+e.message,'amber');
+    console.error(e);
+  }
+}
+
+function styleXlSheet(ws, header, rows, covStartCol, numCourses){
+  // Header row styling
+  header.forEach((_,ci)=>{
+    const addr = XLSX.utils.encode_cell({r:0,c:ci});
+    if(!ws[addr]) ws[addr]={t:'s',v:header[ci]||''};
+    ws[addr].s = xlHdr();
+  });
+  // Coverage depth cells
+  rows.forEach((row,ri)=>{
+    for(let ci=covStartCol; ci<covStartCol+numCourses; ci++){
+      const addr = XLSX.utils.encode_cell({r:ri+1, c:ci});
+      const val = row[ci];
+      if(!ws[addr]) ws[addr]={t:'s',v:val||''};
+      if(val){
+        ws[addr].s = {fill:xlFill(val), font:xlFont(val), alignment:{horizontal:'center'}};
+      } else {
+        ws[addr].s = {fill:{fgColor:{rgb:'FAFAFA'}}, font:{color:{rgb:'CCCCCC'}}, alignment:{horizontal:'center'}};
+      }
+    }
+    // # Covered column
+    const countCol = covStartCol + numCourses;
+    const countAddr = XLSX.utils.encode_cell({r:ri+1, c:countCol});
+    const countVal = parseInt(row[countCol])||0;
+    if(!ws[countAddr]) ws[countAddr]={t:'n',v:countVal};
+    if(countVal===0) ws[countAddr].s={fill:{fgColor:{rgb:'F8D7DA'}},font:{color:{rgb:'721C24'}},alignment:{horizontal:'center'}};
+    else if(countVal>=3) ws[countAddr].s={fill:{fgColor:{rgb:'D4EDDA'}},font:{color:{rgb:'155724'}},alignment:{horizontal:'center'}};
+    else ws[countAddr].s={fill:{fgColor:{rgb:'FFF3CD'}},font:{color:{rgb:'856404'}},alignment:{horizontal:'center'}};
+  });
+  // Freeze header row
+  ws['!freeze'] = {xSplit:0, ySplit:1};
+}
+
+// ══════════════════════════════════════════════════════
+// SESSION SAVE / LOAD + AUTO-SAVE
+// ══════════════════════════════════════════════════════
+const LS_SESSION_KEY = 'curriculum_sprint_session';
+let _sessionRestored = false;
+
+function initSession(){
+  if(!_sessionRestored){
+    const sess = localStorage.getItem(LS_SESSION_KEY);
+    if(sess){
+      try{
+        const d = JSON.parse(sess);
+        if(d.courses && d.courses.length > 0){ applySessionData(d); _sessionRestored=true; }
+      }catch(e){}
+    }
+  }
+}
+
+function autoSave(){
+  try{
+    localStorage.setItem(LS_SESSION_KEY, JSON.stringify({
+      retreatName:S.retreatName, courses:S.courses,
+      instructorName:S.instructorName, myCourses:S.myCourses,
+      pbc:S.pbc, ica:S.ica, cond:S.cond, notes:S.notes, teaching:S.teaching,
+      submitVersion:S.submitVersion, lastSubmittedAt:S.lastSubmittedAt
+    }));
+  }catch(e){}
+}
+
+function applySessionData(d){
+  if(d.retreatName)     S.retreatName=d.retreatName;
+  if(d.courses)         S.courses=d.courses;
+  if(d.instructorName)  S.instructorName=d.instructorName;
+  if(d.myCourses)       S.myCourses=d.myCourses;
+  if(d.pbc)             S.pbc=d.pbc;
+  if(d.ica)             S.ica=d.ica;
+  if(d.cond)            S.cond=d.cond;
+  if(d.notes)           S.notes=d.notes;
+  if(d.teaching)        S.teaching=d.teaching;
+  if(d.submitVersion)   S.submitVersion=d.submitVersion;
+  if(d.lastSubmittedAt) S.lastSubmittedAt=d.lastSubmittedAt;
+  initApp(); refreshDash();
+}
+
+function dlSession(){
+  const data={retreatName:S.retreatName,courses:S.courses,pbc:S.pbc,ica:S.ica,cond:S.cond,notes:S.notes,savedAt:new Date().toISOString()};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download=`mapping-across-curriculum-session-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); toast('Session file saved ✓');
+}
+
+function loadSession(evt){
+  const file=evt.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      applySessionData(d);
+      toast('Session loaded ✓');
+    }catch(err){ toast('Could not read session file','amber'); }
+  };
+  reader.readAsText(file);
+}
+
+// TOAST
+function toast(msg,type='green',dur=3000){
+  const el=document.createElement('div');el.className=`toast ${type==='green'?'':type}`;el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);},dur);
+}
+
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// Wrap refreshDash to also auto-save on every change
+(function(){
+  const orig = refreshDash;
+  refreshDash = function(){orig();autoSave();};
+})();
+
+// Restore session from localStorage on page load
+window.addEventListener('load', ()=>{ initSession(); });
+</script>
+</body>
+</html>
